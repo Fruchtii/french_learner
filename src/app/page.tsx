@@ -2,6 +2,7 @@
 
 import { BookOpen, Brain, Trophy, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import AuthButton from '@/components/AuthButton';
 
 export default function Home() {
   return (
@@ -17,17 +18,12 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/login"
-              className="text-slate-600 hover:text-slate-900 transition-colors"
+              href="/dashboard"
+              className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
             >
-              Sign In
+              My Decks
             </Link>
-            <Link
-              href="/learn"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Get Started
-            </Link>
+            <AuthButton />
           </div>
         </div>
       </nav>
@@ -53,18 +49,18 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/learn"
+                href="/dashboard"
                 className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all hover:shadow-lg hover:shadow-blue-600/25"
               >
                 Start Learning
                 <ChevronRight className="w-5 h-5" />
               </Link>
-              <Link
-                href="/about"
+              <a
+                href="#features"
                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 px-8 py-4 rounded-xl text-lg font-semibold border border-slate-200 hover:border-slate-300 transition-all"
               >
                 Learn More
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -114,7 +110,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 bg-white">
+      <section id="features" className="py-20 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
             Why Choose vokab
@@ -193,7 +189,7 @@ export default function Home() {
             Start learning smarter with vokab today.
           </p>
           <Link
-            href="/learn"
+            href="/dashboard"
             className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all hover:shadow-lg hover:shadow-blue-600/25"
           >
             Start Learning Free

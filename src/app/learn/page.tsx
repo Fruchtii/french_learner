@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import StudySession from '@/components/StudySession';
+import AuthButton from '@/components/AuthButton';
 
 export default function LearnPage() {
   return (
@@ -14,11 +15,14 @@ export default function LearnPage() {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Home</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">vk</span>
-            </div>
-            <span className="font-semibold text-lg text-slate-800">vokab</span>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">vk</span>
+              </div>
+              <span className="font-semibold text-lg text-slate-800">vokab</span>
+            </Link>
+            <AuthButton />
           </div>
         </div>
       </nav>
