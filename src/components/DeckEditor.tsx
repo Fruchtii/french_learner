@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Save, Loader2, Globe, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { getSupabase, type Deck, type Card } from '@/lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 
 interface CardRow {
   id?: string; // undefined for new cards
@@ -40,7 +41,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   // Check auth
   useEffect(() => {
     const supabase = getSupabase();
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         router.push('/dashboard');
@@ -93,7 +94,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
       if (cardsData && cardsData.length > 0) {
         setCards(
-          cardsData.map((card, index) => ({
+          cardsData.map((card: Card, index: number) => ({
             id: card.id,
             front: card.front,
             back: card.back,

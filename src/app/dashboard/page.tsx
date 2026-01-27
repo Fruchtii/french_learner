@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
     // Check auth and fetch decks
     const initDashboard = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } }: { data: { session: Session | null } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
       if (session?.user) {
