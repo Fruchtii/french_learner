@@ -1,10 +1,19 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Eye, Check, X, ArrowRight, RotateCcw, Trophy, Sparkles, Table } from 'lucide-react';
+import { Eye, Check, X, ArrowRight, RotateCcw, Trophy, Sparkles, ChevronRight } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 
-type CardState = 'question' | 'revealed';
+// All 4 tenses in order of reveal
+const TENSE_ORDER: TenseKey[] = ['present', 'passeCompose', 'imparfait', 'futurSimple'];
+
+// Colors for each tense
+const TENSE_COLORS: Record<TenseKey, { bg: string; border: string; text: string; badge: string }> = {
+  present: { bg: 'from-blue-50 to-blue-100', border: 'border-blue-200', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
+  passeCompose: { bg: 'from-green-50 to-green-100', border: 'border-green-200', text: 'text-green-600', badge: 'bg-green-100 text-green-700' },
+  imparfait: { bg: 'from-amber-50 to-amber-100', border: 'border-amber-200', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-700' },
+  futurSimple: { bg: 'from-rose-50 to-rose-100', border: 'border-rose-200', text: 'text-rose-600', badge: 'bg-rose-100 text-rose-700' },
+};
 
 function getAllConjugations(verb: Verb, tense: TenseKey): { pronoun: PronounKey; label: string; value: string }[] {
   const conjugation = verb[tense];
@@ -17,82 +26,85 @@ function getAllConjugations(verb: Verb, tense: TenseKey): { pronoun: PronounKey;
   }));
 }
 
+// Types for the component state
+type ProDeckState = 'waiting' | 'revealing' | 'grading' | 'finished';
+
 interface ProDeckProps {
   verb: Verb;
-  tense: TenseKey;
   boxLevel: number;
   onSubmit: (isCorrect: boolean) => void;
   onSkip: () => void;
   onNext: () => void;
   onReadyForNext?: (ready: boolean) => void;
+  onPrimaryAction?: (action: () => void) => void;
 }
 
 export default function ProDeck({
   verb,
-  tense,
   boxLevel,
   onSubmit,
   onSkip,
   onNext,
   onReadyForNext,
+  onPrimaryAction,
 }: ProDeckProps) {
-  const [cardState, setCardState] = useState<CardState>('question');
+  // revealStep: 0 = nothing, 1 = présent, 2 = passé composé, 3 = imparfait, 4 = futur simple
+  const [revealStep, setRevealStep] = useState(0);
   const [hasGraded, setHasGraded] = useState(false);
 
-  // Reset state when card changes
+  // Derived state
+  const state: ProDeckState =
+    revealStep === 0 ? 'waiting' :
+    revealStep < 4 ? 'revealing' :
+    !hasGraded ? 'grading' : 'finished';
+
+  // Reset state when verb changes
   useEffect(() => {
-    setCardState('question');
+    setRevealStep(0);
     setHasGraded(false);
     onReadyForNext?.(false);
-  }, [verb.id, tense, onReadyForNext]);
+  }, [verb.id, onReadyForNext]);
 
-  // Notify parent when ready for spacebar navigation
+  // Notify parent when ready for next (after grading)
   useEffect(() => {
     onReadyForNext?.(hasGraded);
   }, [hasGraded, onReadyForNext]);
 
-  const allConjugations = getAllConjugations(verb, tense);
+  // Reveal next tense
+  const handleRevealNext = useCallback(() => {
+    if (revealStep < 4) {
+      setRevealStep(prev => prev + 1);
+    }
+  }, [revealStep]);
 
-  const handleReveal = useCallback(() => {
-    setCardState('revealed');
-  }, []);
-
+  // Grade the attempt
   const handleGrade = useCallback((isCorrect: boolean) => {
     onSubmit(isCorrect);
     setHasGraded(true);
   }, [onSubmit]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (cardState === 'question') {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        handleReveal();
-      }
-    } else if (!hasGraded) {
-      if (e.key === '1' || e.key === 'ArrowLeft') {
-        handleGrade(false);
-      } else if (e.key === '2' || e.key === 'ArrowRight') {
-        handleGrade(true);
-      }
-    } else if (hasGraded && e.key === 'Enter') {
-      onNext();
+  // Register primary action with parent for spacebar handling
+  useEffect(() => {
+    if (!onPrimaryAction) return;
+
+    if (state === 'waiting' || state === 'revealing') {
+      onPrimaryAction(handleRevealNext);
+    } else if (state === 'finished') {
+      onPrimaryAction(onNext);
+    } else {
+      // In grading state, no primary spacebar action (use 1/2 keys)
+      onPrimaryAction(() => {});
     }
-  }, [cardState, hasGraded, handleReveal, handleGrade, onNext]);
+  }, [state, handleRevealNext, onNext, onPrimaryAction]);
+
+  // Get revealed tenses
+  const revealedTenses = TENSE_ORDER.slice(0, revealStep);
+  const nextTense = revealStep < 4 ? TENSE_ORDER[revealStep] : null;
 
   return (
-    <div
-      className="w-full outline-none"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-    >
+    <div className="w-full outline-none">
       {/* Main Card */}
-      <div
-        className={`
-          bg-white rounded-2xl shadow-xl border overflow-hidden transition-all duration-300
-          ${cardState === 'question' ? 'shadow-purple-200/50 border-purple-200 cursor-pointer hover:shadow-purple-300/50' : 'shadow-slate-200/50 border-slate-200'}
-        `}
-        onClick={cardState === 'question' ? handleReveal : undefined}
-      >
+      <div className="bg-white rounded-2xl shadow-xl shadow-purple-200/50 border border-purple-200 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
           <div className="flex justify-between items-center text-white">
@@ -100,7 +112,7 @@ export default function ProDeck({
               <Sparkles className="w-4 h-4 text-purple-200" />
               <span className="text-purple-100 text-sm font-medium">ProDeck</span>
               <span className="text-white/60">•</span>
-              <span className="text-white text-sm font-semibold">Full Table</span>
+              <span className="text-white text-sm font-semibold">Full Verb Drill</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
@@ -108,7 +120,7 @@ export default function ProDeck({
                 <span className="text-xs font-medium">Box {boxLevel}</span>
               </div>
               <button
-                onClick={(e) => { e.stopPropagation(); onSkip(); }}
+                onClick={onSkip}
                 className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                 title="Skip to new verb"
               >
@@ -119,112 +131,143 @@ export default function ProDeck({
         </div>
 
         {/* Card Content */}
-        <div className="p-6">
-          {/* Question Section */}
-          <div className="text-center mb-6">
-            <h2 className="text-4xl font-bold text-slate-800 mb-2">
+        <div className="p-5">
+          {/* Verb Display */}
+          <div className="text-center mb-4">
+            <h2 className="text-4xl font-bold text-slate-800 mb-1">
               {verb.infinitive}
             </h2>
-            <p className="text-slate-500 text-lg mb-4">{verb.english}</p>
-
-            {/* Tense Badge */}
-            <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-full">
-              <Table className="w-4 h-4" />
-              <span className="font-semibold">{tenseNames[tense]}</span>
-            </div>
+            <p className="text-slate-500 text-lg">{verb.english}</p>
           </div>
 
-          {/* Challenge Text */}
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-5 border border-purple-100">
-            <p className="text-center text-slate-600">
-              {cardState === 'question'
-                ? 'Can you conjugate all 6 pronouns?'
-                : 'Review the full conjugation table:'}
-            </p>
+          {/* Progress Indicator */}
+          <div className="flex justify-center gap-2 mb-4">
+            {TENSE_ORDER.map((tense, i) => (
+              <div
+                key={tense}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  i < revealStep
+                    ? 'bg-purple-500'
+                    : 'bg-slate-200'
+                }`}
+              />
+            ))}
           </div>
 
-          {/* State: Question (Hidden Table) */}
-          {cardState === 'question' && (
+          {/* State: Waiting (Nothing revealed) */}
+          {state === 'waiting' && (
             <div className="animate-fadeIn">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-4 border border-purple-100">
+                <p className="text-center text-slate-600">
+                  Can you conjugate all 4 tenses?
+                </p>
+              </div>
               <button
-                onClick={handleReveal}
-                className="w-full py-10 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
+                onClick={handleRevealNext}
+                className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
               >
                 <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                   <Eye className="w-7 h-7 text-purple-600" />
                 </div>
-                <span className="text-slate-600 font-medium text-lg">Tap to reveal table</span>
+                <span className="text-slate-600 font-medium text-lg">Tap to reveal {tenseNames.present}</span>
                 <span className="text-slate-400 text-sm">or press Space</span>
               </button>
             </div>
           )}
 
-          {/* State: Revealed (Full Table) */}
-          {cardState === 'revealed' && (
-            <div className="animate-fadeIn">
-              {/* Full Conjugation Table */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-5 border border-purple-200">
-                <div className="grid grid-cols-2 gap-2">
-                  {allConjugations.map(({ pronoun, label, value }) => (
+          {/* State: Revealing / Grading / Finished (Show tense tables) */}
+          {revealStep > 0 && (
+            <div className="space-y-3 animate-fadeIn">
+              {/* 2x2 Grid of Tense Tables */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {revealedTenses.map((tense) => {
+                  const colors = TENSE_COLORS[tense];
+                  const conjugations = getAllConjugations(verb, tense);
+
+                  return (
                     <div
-                      key={pronoun}
-                      className="flex justify-between items-center px-4 py-3 bg-white rounded-lg border border-purple-100 shadow-sm"
+                      key={tense}
+                      className={`bg-gradient-to-br ${colors.bg} rounded-xl p-3 border ${colors.border} animate-fadeIn`}
                     >
-                      <span className="text-purple-600 font-medium">{label}</span>
-                      <span className="font-mono font-bold text-slate-800 text-lg">{value}</span>
+                      {/* Tense Header */}
+                      <div className={`inline-flex items-center gap-1 ${colors.badge} px-2 py-1 rounded-md text-xs font-semibold mb-2`}>
+                        {tenseNames[tense]}
+                      </div>
+
+                      {/* Conjugation Grid */}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {conjugations.map(({ pronoun, label, value }) => (
+                          <div
+                            key={pronoun}
+                            className="flex justify-between items-center px-2 py-1.5 bg-white/80 rounded-md text-sm"
+                          >
+                            <span className={`${colors.text} font-medium text-xs`}>{label}</span>
+                            <span className="font-mono font-bold text-slate-800">{value}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+
+              {/* Reveal Next Button (if not all revealed) */}
+              {state === 'revealing' && nextTense && (
+                <button
+                  onClick={handleRevealNext}
+                  className="w-full py-4 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 border border-purple-200"
+                >
+                  Reveal {tenseNames[nextTense]}
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Self-Grading Section - Only when revealed */}
-        {cardState === 'revealed' && (
-          <div className="px-6 pb-6">
-            {!hasGraded ? (
-              <div className="animate-fadeIn">
-                <p className="text-center text-slate-500 text-sm mb-3">How well did you know the table?</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleGrade(false)}
-                    className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <X className="w-5 h-5" />
-                    I missed some
-                  </button>
-                  <button
-                    onClick={() => handleGrade(true)}
-                    className="flex-1 py-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-300 text-green-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Check className="w-5 h-5" />
-                    I knew the table
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="animate-fadeIn">
-                <button
-                  onClick={onNext}
-                  className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
-                >
-                  Next Card
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+        {/* Grading Section - Only when all tenses revealed */}
+        {state === 'grading' && (
+          <div className="px-5 pb-5 animate-fadeIn">
+            <p className="text-center text-slate-500 text-sm mb-3">How well did you know all the tenses?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleGrade(false)}
+                className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <X className="w-5 h-5" />
+                I struggled
+              </button>
+              <button
+                onClick={() => handleGrade(true)}
+                className="flex-1 py-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-300 text-green-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <Check className="w-5 h-5" />
+                I knew it all
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Next Button - Only after grading */}
+        {state === 'finished' && (
+          <div className="px-5 pb-5 animate-fadeIn">
+            <button
+              onClick={onNext}
+              className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              Next Verb
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         )}
       </div>
 
       {/* Keyboard hints */}
       <p className="text-center text-slate-400 text-xs mt-3">
-        {cardState === 'question'
-          ? 'Press Space to reveal'
-          : !hasGraded
-            ? '1 or ← = missed some • 2 or → = knew it'
-            : 'Press Space or Enter for next card'}
+        {state === 'waiting' && 'Press Space to reveal'}
+        {state === 'revealing' && 'Press Space to reveal next tense'}
+        {state === 'grading' && '1 or ← = struggled • 2 or → = knew it'}
+        {state === 'finished' && 'Press Space or Enter for next verb'}
       </p>
     </div>
   );

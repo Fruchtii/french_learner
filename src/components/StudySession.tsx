@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers } from 'lucide-react';
 import { useStudyStore } from '@/store/useStudyStore';
 import TypingCard from './TypingCard';
@@ -17,6 +17,9 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   const [mode, setMode] = useState<StudyMode>(initialMode);
   const [readyForNext, setReadyForNext] = useState(false);
 
+  // Ref to store the current primary action (set by child components)
+  const primaryActionRef = useRef<(() => void) | null>(null);
+
   const {
     currentCard,
     sessionStats,
@@ -32,18 +35,40 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     setReadyForNext(ready);
   }, []);
 
-  // Global spacebar handler for quick navigation
+  // Handle primary action registration from child components
+  const handlePrimaryAction = useCallback((action: () => void) => {
+    primaryActionRef.current = action;
+  }, []);
+
+  // Global keyboard handler - robust implementation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input field
-      const activeElement = document.activeElement;
-      const isInputFocused = activeElement?.tagName === 'INPUT' ||
-                             activeElement?.tagName === 'TEXTAREA';
+      // CRITICAL: Check e.target for input elements (more reliable than activeElement)
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return; // Don't interfere with typing
+      }
 
-      if (e.key === ' ' && readyForNext && !isInputFocused) {
-        e.preventDefault();
-        selectNextCard();
-        setReadyForNext(false);
+      // Handle Spacebar
+      if (e.key === ' ') {
+        e.preventDefault(); // Prevent page scroll
+
+        // If there's a primary action registered, execute it
+        if (primaryActionRef.current) {
+          primaryActionRef.current();
+        } else if (readyForNext) {
+          // Fallback: if ready for next, go to next card
+          selectNextCard();
+          setReadyForNext(false);
+        }
+      }
+
+      // Handle Enter key
+      if (e.key === 'Enter') {
+        if (readyForNext) {
+          selectNextCard();
+          setReadyForNext(false);
+        }
       }
     };
 
@@ -55,6 +80,11 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   useEffect(() => {
     initializeCards();
   }, [initializeCards]);
+
+  // Reset primary action when mode or card changes
+  useEffect(() => {
+    primaryActionRef.current = null;
+  }, [mode, currentCard?.cardId]);
 
   // Get current card's box level
   const boxLevel = currentCard
@@ -73,8 +103,6 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   // Handle override (correct a wrong answer)
   const handleOverride = () => {
     if (!currentCard) return;
-    // Submit a correct answer to offset the previous wrong one
-    // The store will increment the box and adjust stats
     submitResult(currentCard.verb.id, currentCard.tense, currentCard.pronoun, true);
   };
 
@@ -167,6 +195,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onSkip={handleSkip}
           onNext={handleNext}
           onReadyForNext={handleReadyForNext}
+          onPrimaryAction={handlePrimaryAction}
         />
       )}
       {mode === 'flashcard' && (
@@ -179,17 +208,18 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onSkip={handleSkip}
           onNext={handleNext}
           onReadyForNext={handleReadyForNext}
+          onPrimaryAction={handlePrimaryAction}
         />
       )}
       {mode === 'prodeck' && (
         <ProDeck
           verb={currentCard.verb}
-          tense={currentCard.tense}
           boxLevel={boxLevel}
           onSubmit={handleSubmit}
           onSkip={handleSkip}
           onNext={handleNext}
           onReadyForNext={handleReadyForNext}
+          onPrimaryAction={handlePrimaryAction}
         />
       )}
 

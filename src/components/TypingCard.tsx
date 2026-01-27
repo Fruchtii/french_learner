@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Check, X, ArrowRight, RotateCcw, Trophy, Undo2, Keyboard } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 import { validateAnswer } from '@/lib/validation';
@@ -24,6 +24,7 @@ interface TypingCardProps {
   onSkip: () => void;
   onNext: () => void;
   onReadyForNext?: (ready: boolean) => void;
+  onPrimaryAction?: (action: () => void) => void;
 }
 
 export default function TypingCard({
@@ -36,6 +37,7 @@ export default function TypingCard({
   onSkip,
   onNext,
   onReadyForNext,
+  onPrimaryAction,
 }: TypingCardProps) {
   const [userInput, setUserInput] = useState('');
   const [quizState, setQuizState] = useState<QuizState>('answering');
@@ -67,6 +69,19 @@ export default function TypingCard({
     const isReady = quizState === 'correct' || quizState === 'incorrect';
     onReadyForNext?.(isReady);
   }, [quizState, onReadyForNext]);
+
+  // Register primary action with parent for spacebar handling
+  // For Typing mode: Only register when done answering (user might be typing)
+  useEffect(() => {
+    if (!onPrimaryAction) return;
+
+    if (quizState === 'correct' || quizState === 'incorrect') {
+      onPrimaryAction(onNext);
+    } else {
+      // During answering, no spacebar action (user is typing)
+      onPrimaryAction(() => {});
+    }
+  }, [quizState, onNext, onPrimaryAction]);
 
   const handleAccentClick = (char: string) => {
     setUserInput(prev => prev + char);

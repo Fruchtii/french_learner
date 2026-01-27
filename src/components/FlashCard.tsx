@@ -20,6 +20,7 @@ interface FlashCardProps {
   onSkip: () => void;
   onNext: () => void;
   onReadyForNext?: (ready: boolean) => void;
+  onPrimaryAction?: (action: () => void) => void;
 }
 
 export default function FlashCard({
@@ -31,6 +32,7 @@ export default function FlashCard({
   onSkip,
   onNext,
   onReadyForNext,
+  onPrimaryAction,
 }: FlashCardProps) {
   const [cardState, setCardState] = useState<CardState>('question');
   const [hasGraded, setHasGraded] = useState(false);
@@ -57,6 +59,20 @@ export default function FlashCard({
     onSubmit(isCorrect);
     setHasGraded(true);
   }, [onSubmit]);
+
+  // Register primary action with parent for spacebar handling
+  useEffect(() => {
+    if (!onPrimaryAction) return;
+
+    if (cardState === 'question') {
+      onPrimaryAction(handleReveal);
+    } else if (hasGraded) {
+      onPrimaryAction(onNext);
+    } else {
+      // In grading state, no primary spacebar action (use 1/2 keys)
+      onPrimaryAction(() => {});
+    }
+  }, [cardState, hasGraded, handleReveal, onNext, onPrimaryAction]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (cardState === 'question') {
