@@ -230,6 +230,12 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
         if (deckError) {
           console.error('Deck insert error:', deckError);
+
+          // Check for RLS permission denied error
+          if (deckError.code === '42501' || deckError.message?.includes('permission denied')) {
+            alert('Permission denied: Unable to create deck. Please check that:\n1. You are signed in\n2. Row Level Security policies allow deck creation\n3. Your authentication token is valid');
+          }
+
           throw deckError;
         }
 
@@ -278,6 +284,12 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
       if (cardsError) {
         console.error('Cards insert error:', cardsError);
+
+        // Check for RLS permission denied error
+        if (cardsError.code === '42501' || cardsError.message?.includes('permission denied')) {
+          alert('Permission denied: Unable to save cards. Please check that:\n1. You are signed in\n2. Row Level Security policies are configured correctly\n3. You own this deck');
+        }
+
         throw cardsError;
       }
 
