@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2 } from 'lucide-react';
+import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil } from 'lucide-react';
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
 
@@ -158,10 +158,13 @@ export default function DashboardPage() {
 
           {/* Create Deck Button */}
           <div className="mb-8">
-            <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25">
+            <Link
+              href="/dashboard/create"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25"
+            >
               <Plus className="w-5 h-5" />
               Create New Deck
-            </button>
+            </Link>
           </div>
 
           {/* Decks Grid */}
@@ -176,69 +179,84 @@ export default function DashboardPage() {
               <p className="text-slate-600 mb-6">
                 Create your first deck to start learning!
               </p>
-              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              <Link
+                href="/dashboard/create"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
                 <Plus className="w-4 h-4" />
                 Create Deck
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {decks.map((deck) => (
-                <Link
+                <div
                   key={deck.id}
-                  href={`/learn/${deck.id}`}
-                  className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all overflow-hidden"
+                  className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all overflow-hidden relative"
                 >
-                  {/* Deck Header */}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-white" />
+                  {/* Edit Button (Top Right) */}
+                  <Link
+                    href={`/dashboard/${deck.id}/edit`}
+                    className="absolute top-4 right-4 z-10 p-2 bg-white rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all shadow-sm opacity-0 group-hover:opacity-100"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Edit deck"
+                  >
+                    <Pencil className="w-4 h-4 text-slate-600 hover:text-blue-600" />
+                  </Link>
+
+                  {/* Main Deck Link (Study) */}
+                  <Link href={`/learn/${deck.id}`} className="block">
+                    {/* Deck Header */}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                          <BookOpen className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                          {deck.is_public ? (
+                            <>
+                              <Globe className="w-3 h-3" />
+                              <span>Public</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-3 h-3" />
+                              <span>Private</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        {deck.is_public ? (
-                          <>
-                            <Globe className="w-3 h-3" />
-                            <span>Public</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-3 h-3" />
-                            <span>Private</span>
-                          </>
-                        )}
+
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {deck.title}
+                      </h3>
+
+                      {deck.description && (
+                        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                          {deck.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-slate-500">
+                          <span className="font-semibold text-slate-700">
+                            {deck.card_count || 0}
+                          </span>{' '}
+                          cards
+                        </div>
+                        <div className="flex items-center gap-1 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-sm font-medium">Study</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
 
-                    <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {deck.title}
-                    </h3>
-
-                    {deck.description && (
-                      <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                        {deck.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-slate-500">
-                        <span className="font-semibold text-slate-700">
-                          {deck.card_count || 0}
-                        </span>{' '}
-                        cards
-                      </div>
-                      <div className="flex items-center gap-1 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-sm font-medium">Study</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
+                    {/* Progress Bar */}
+                    <div className="h-1 bg-slate-100">
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 w-0 group-hover:w-full transition-all duration-500" />
                     </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="h-1 bg-slate-100">
-                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 w-0 group-hover:w-full transition-all duration-500" />
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
