@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { verbs, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
-import { getSupabase, type StudyProgress } from '@/lib/supabase';
+import { getSupabase, type LegacyStudyProgress } from '@/lib/supabase';
 
 // Leitner Box intervals (in milliseconds)
 // Using short intervals for Box 0-2 for easy testing
@@ -99,7 +99,7 @@ function generateAllCards(): Record<string, CardProgress> {
 }
 
 // Convert local CardProgress to database format
-function toDbFormat(card: CardProgress, userId: string): Omit<StudyProgress, 'id' | 'created_at' | 'updated_at'> {
+function toDbFormat(card: CardProgress, userId: string): Omit<LegacyStudyProgress, 'id' | 'created_at' | 'updated_at'> {
   return {
     user_id: userId,
     verb_id: card.verbId,
@@ -114,7 +114,7 @@ function toDbFormat(card: CardProgress, userId: string): Omit<StudyProgress, 'id
 }
 
 // Convert database format to local CardProgress
-function fromDbFormat(dbCard: StudyProgress): CardProgress {
+function fromDbFormat(dbCard: LegacyStudyProgress): CardProgress {
   return {
     verbId: dbCard.verb_id,
     tense: dbCard.tense as TenseKey,

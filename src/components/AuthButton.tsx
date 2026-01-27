@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User, LogOut, LogIn, Loader2 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 export default function AuthButton() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -14,7 +14,7 @@ export default function AuthButton() {
     const supabase = getSupabase();
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -22,7 +22,7 @@ export default function AuthButton() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: Session | null) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });

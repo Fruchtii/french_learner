@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil } from 'lucide-react';
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
+import type { Session } from '@supabase/supabase-js';
 
 interface DeckWithCount extends Deck {
   card_count?: number;
@@ -20,7 +21,7 @@ export default function DashboardPage() {
 
     // Check auth and fetch decks
     const initDashboard = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } }: { data: { session: Session | null } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -34,7 +35,7 @@ export default function DashboardPage() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: Session | null) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchDecks();
