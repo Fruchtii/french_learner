@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Check, X, ArrowRight, RotateCcw, Trophy, Undo2 } from 'lucide-react';
+import { Check, X, ArrowRight, RotateCcw, Trophy, Undo2, Keyboard } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 import { validateAnswer } from '@/lib/validation';
 
@@ -23,6 +23,7 @@ interface TypingCardProps {
   onOverride: () => void;
   onSkip: () => void;
   onNext: () => void;
+  onReadyForNext?: (ready: boolean) => void;
 }
 
 export default function TypingCard({
@@ -34,6 +35,7 @@ export default function TypingCard({
   onOverride,
   onSkip,
   onNext,
+  onReadyForNext,
 }: TypingCardProps) {
   const [userInput, setUserInput] = useState('');
   const [quizState, setQuizState] = useState<QuizState>('answering');
@@ -57,7 +59,14 @@ export default function TypingCard({
     setCorrectAnswer('');
     setIsShaking(false);
     setWasOverridden(false);
-  }, [verb.id, tense, pronoun]);
+    onReadyForNext?.(false);
+  }, [verb.id, tense, pronoun, onReadyForNext]);
+
+  // Notify parent when ready for spacebar navigation
+  useEffect(() => {
+    const isReady = quizState === 'correct' || quizState === 'incorrect';
+    onReadyForNext?.(isReady);
+  }, [quizState, onReadyForNext]);
 
   const handleAccentClick = (char: string) => {
     setUserInput(prev => prev + char);
@@ -106,21 +115,26 @@ export default function TypingCard({
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
         <div className="flex justify-between items-center text-white">
           <div className="flex items-center gap-2">
+            <Keyboard className="w-4 h-4 text-blue-200" />
+            <span className="text-blue-100 text-sm font-medium">Typing</span>
+            <span className="text-white/60">•</span>
             <span className="text-blue-100 text-sm font-medium uppercase tracking-wide">
               {tenseNames[tense]}
             </span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
               <Trophy className="w-3 h-3" />
               <span className="text-xs font-medium">Box {boxLevel}</span>
             </div>
+            <button
+              onClick={onSkip}
+              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+              title="Skip to new verb"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onSkip}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-            title="Skip to new verb"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -135,7 +149,7 @@ export default function TypingCard({
         </div>
 
         {/* Pronoun Prompt */}
-        <div className="bg-slate-50 rounded-xl p-4 mb-4">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
           <p className="text-center text-lg text-slate-700">
             Conjugate for:{' '}
             <span className="font-bold text-blue-600 text-xl">
@@ -247,6 +261,15 @@ export default function TypingCard({
             </button>
           </div>
         )}
+      </div>
+
+      {/* Keyboard hints */}
+      <div className="px-5 pb-4">
+        <p className="text-center text-slate-400 text-xs">
+          {quizState === 'answering'
+            ? 'Press Enter to check'
+            : 'Press Space or Enter for next card'}
+        </p>
       </div>
     </div>
   );

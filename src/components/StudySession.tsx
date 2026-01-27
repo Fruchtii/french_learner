@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Check, X, Zap, Clock, Keyboard, Sparkles } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers } from 'lucide-react';
 import { useStudyStore } from '@/store/useStudyStore';
 import TypingCard from './TypingCard';
+import FlashCard from './FlashCard';
 import ProDeck from './ProDeck';
 
-export type StudyMode = 'typing' | 'prodeck';
+export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
 
 interface StudySessionProps {
   initialMode?: StudyMode;
@@ -14,6 +15,7 @@ interface StudySessionProps {
 
 export default function StudySession({ initialMode = 'typing' }: StudySessionProps) {
   const [mode, setMode] = useState<StudyMode>(initialMode);
+  const [readyForNext, setReadyForNext] = useState(false);
 
   const {
     currentCard,
@@ -24,6 +26,30 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     selectNextCard,
     getProgress,
   } = useStudyStore();
+
+  // Handle ready for next callback from card components
+  const handleReadyForNext = useCallback((ready: boolean) => {
+    setReadyForNext(ready);
+  }, []);
+
+  // Global spacebar handler for quick navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' ||
+                             activeElement?.tagName === 'TEXTAREA';
+
+      if (e.key === ' ' && readyForNext && !isInputFocused) {
+        e.preventDefault();
+        selectNextCard();
+        setReadyForNext(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [readyForNext, selectNextCard]);
 
   // Initialize cards on mount
   useEffect(() => {
@@ -78,7 +104,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
         <div className="inline-flex bg-slate-100 rounded-lg p-1">
           <button
             onClick={() => setMode('typing')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               mode === 'typing'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
@@ -88,8 +114,19 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
             Typing
           </button>
           <button
+            onClick={() => setMode('flashcard')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              mode === 'flashcard'
+                ? 'bg-white text-teal-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            Flashcard
+          </button>
+          <button
             onClick={() => setMode('prodeck')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               mode === 'prodeck'
                 ? 'bg-white text-purple-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
@@ -119,7 +156,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
       </div>
 
       {/* Card Component */}
-      {mode === 'typing' ? (
+      {mode === 'typing' && (
         <TypingCard
           verb={currentCard.verb}
           tense={currentCard.tense}
@@ -129,9 +166,11 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onOverride={handleOverride}
           onSkip={handleSkip}
           onNext={handleNext}
+          onReadyForNext={handleReadyForNext}
         />
-      ) : (
-        <ProDeck
+      )}
+      {mode === 'flashcard' && (
+        <FlashCard
           verb={currentCard.verb}
           tense={currentCard.tense}
           pronoun={currentCard.pronoun}
@@ -139,6 +178,18 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onSubmit={handleSubmit}
           onSkip={handleSkip}
           onNext={handleNext}
+          onReadyForNext={handleReadyForNext}
+        />
+      )}
+      {mode === 'prodeck' && (
+        <ProDeck
+          verb={currentCard.verb}
+          tense={currentCard.tense}
+          boxLevel={boxLevel}
+          onSubmit={handleSubmit}
+          onSkip={handleSkip}
+          onNext={handleNext}
+          onReadyForNext={handleReadyForNext}
         />
       )}
 
