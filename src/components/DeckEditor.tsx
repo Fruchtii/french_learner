@@ -167,8 +167,13 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   };
 
   const handleSave = async () => {
-    if (!user) {
-      alert('You must be signed in to save decks.');
+    // Step 1: Get current user
+    const supabase = getSupabase();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      alert('Please sign in to save decks.');
+      console.error('Auth error:', userError);
       return;
     }
 
@@ -190,12 +195,11 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
     }
 
     setSaving(true);
-    const supabase = getSupabase();
 
     try {
       let finalDeckId = deckId;
 
-      // 1. Upsert deck
+      // Step 2: Insert/Update Deck
       if (deckId) {
         // Update existing deck
         const { error: deckError } = await supabase
@@ -207,9 +211,12 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           })
           .eq('id', deckId);
 
-        if (deckError) throw deckError;
+        if (deckError) {
+          console.error('Deck update error:', deckError);
+          throw deckError;
+        }
       } else {
-        // Create new deck
+        // Create new deck - CRITICAL: Return the new ID
         const { data: newDeck, error: deckError } = await supabase
           .from('decks')
           .insert({
@@ -221,11 +228,21 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           .select()
           .single();
 
-        if (deckError) throw deckError;
+        if (deckError) {
+          console.error('Deck insert error:', deckError);
+          throw deckError;
+        }
+
+        if (!newDeck || !newDeck.id) {
+          console.error('No deck ID returned from insert');
+          throw new Error('Failed to create deck - no ID returned');
+        }
+
         finalDeckId = newDeck.id;
+        console.log('Created new deck with ID:', finalDeckId);
       }
 
-      // 2. Handle card deletions (for edit mode)
+      // Step 3: Handle card deletions (for edit mode)
       const deletedCards = cards.filter(c => c._deleted && c.id);
       if (deletedCards.length > 0) {
         const deleteIds = deletedCards.map(c => c.id!);
@@ -234,19 +251,24 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           .delete()
           .in('id', deleteIds);
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          console.error('Card deletion error:', deleteError);
+          throw deleteError;
+        }
       }
 
-      // 3. Upsert cards (insert new, update existing)
+      // Step 4: Insert/Update Cards
       const activeCards = cards.filter(c => !c._deleted);
       const cardsToSave = activeCards.map(card => ({
         id: card.id, // undefined for new cards
         deck_id: finalDeckId!,
         front: card.front.trim(),
         back: card.back.trim(),
-        data: { type: 'flashcard' }, // Default data structure
+        data: { type: 'flashcard' },
         order_index: card.order_index,
       }));
+
+      console.log(`Saving ${cardsToSave.length} cards to deck ${finalDeckId}`);
 
       const { error: cardsError } = await supabase
         .from('cards')
@@ -254,13 +276,21 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           onConflict: 'id',
         });
 
-      if (cardsError) throw cardsError;
+      if (cardsError) {
+        console.error('Cards insert error:', cardsError);
+        throw cardsError;
+      }
 
       // Success! Redirect to dashboard
+      console.log('Deck saved successfully!');
       router.push('/dashboard');
     } catch (error) {
       console.error('Error saving deck:', error);
-      alert('Failed to save deck. Please try again.');
+      if (error instanceof Error) {
+        alert(`Failed to save deck: ${error.message}`);
+      } else {
+        alert('Failed to save deck. Please check console for details.');
+      }
     } finally {
       setSaving(false);
     }
@@ -319,7 +349,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
           {/* Title */}
           <div className="mb-4">
-            <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -328,13 +358,13 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., French Irregular Verbs"
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
             />
           </div>
 
           {/* Description */}
           <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
               Description (optional)
             </label>
             <textarea
@@ -343,13 +373,13 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this deck covers..."
               rows={3}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder:text-gray-400"
             />
           </div>
 
           {/* Public/Private Toggle */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Visibility</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
             <div className="flex items-center gap-4">
               <button
                 type="button"
@@ -408,7 +438,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
                 {/* Front Input */}
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Front</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Front</label>
                   <input
                     ref={(el) => {
                       if (!cardRefs.current[index]) cardRefs.current[index] = { front: null, back: null };
@@ -418,13 +448,13 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
                     value={card.front}
                     onChange={(e) => handleCardChange(index, 'front', e.target.value)}
                     placeholder="Question or term"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400"
                   />
                 </div>
 
                 {/* Back Input */}
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Back</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Back</label>
                   <input
                     ref={(el) => {
                       if (!cardRefs.current[index]) cardRefs.current[index] = { front: null, back: null };
@@ -435,7 +465,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
                     onChange={(e) => handleCardChange(index, 'back', e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, 'back', e)}
                     placeholder="Answer or definition"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400"
                   />
                 </div>
 
