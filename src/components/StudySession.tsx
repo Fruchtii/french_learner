@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, X, Zap, Clock, Keyboard, Layers } from 'lucide-react';
+import { Check, X, Zap, Clock, Keyboard, Sparkles } from 'lucide-react';
 import { useStudyStore } from '@/store/useStudyStore';
 import TypingCard from './TypingCard';
-import FlashCard from './FlashCard';
+import ProDeck from './ProDeck';
 
-export type StudyMode = 'typing' | 'flashcard';
+export type StudyMode = 'typing' | 'prodeck';
 
 interface StudySessionProps {
   initialMode?: StudyMode;
@@ -88,15 +88,15 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
             Typing
           </button>
           <button
-            onClick={() => setMode('flashcard')}
+            onClick={() => setMode('prodeck')}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              mode === 'flashcard'
+              mode === 'prodeck'
                 ? 'bg-white text-purple-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Layers className="w-4 h-4" />
-            Flashcard
+            <Sparkles className="w-4 h-4" />
+            ProDeck
           </button>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onNext={handleNext}
         />
       ) : (
-        <FlashCard
+        <ProDeck
           verb={currentCard.verb}
           tense={currentCard.tense}
           pronoun={currentCard.pronoun}
@@ -161,11 +161,6 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           </div>
         </div>
       </div>
-
-      {/* Keyboard hint */}
-      <p className="text-center text-slate-400 text-xs mt-3">
-        Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">Enter</kbd> to continue
-      </p>
     </div>
   );
 }
