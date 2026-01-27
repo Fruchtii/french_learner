@@ -11,6 +11,11 @@ function getCorrectAnswer(verb: Verb, tense: TenseKey, pronoun: PronounKey): str
   return conjugation[pronoun];
 }
 
+interface GradeActions {
+  gradeCorrect: () => void;
+  gradeIncorrect: () => void;
+}
+
 interface FlashCardProps {
   verb: Verb;
   tense: TenseKey;
@@ -21,6 +26,7 @@ interface FlashCardProps {
   onNext: () => void;
   onReadyForNext?: (ready: boolean) => void;
   onPrimaryAction?: (action: () => void) => void;
+  onGradeActions?: (actions: GradeActions | null) => void;
 }
 
 export default function FlashCard({
@@ -33,6 +39,7 @@ export default function FlashCard({
   onNext,
   onReadyForNext,
   onPrimaryAction,
+  onGradeActions,
 }: FlashCardProps) {
   const [cardState, setCardState] = useState<CardState>('question');
   const [hasGraded, setHasGraded] = useState(false);
@@ -73,6 +80,21 @@ export default function FlashCard({
       onPrimaryAction(() => {});
     }
   }, [cardState, hasGraded, handleReveal, onNext, onPrimaryAction]);
+
+  // Register grading actions with parent for keyboard handling
+  useEffect(() => {
+    if (!onGradeActions) return;
+
+    // Only register when in grading state (revealed but not yet graded)
+    if (cardState === 'revealed' && !hasGraded) {
+      onGradeActions({
+        gradeCorrect: () => handleGrade(true),
+        gradeIncorrect: () => handleGrade(false),
+      });
+    } else {
+      onGradeActions(null);
+    }
+  }, [cardState, hasGraded, handleGrade, onGradeActions]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (cardState === 'question') {

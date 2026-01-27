@@ -29,6 +29,11 @@ function getAllConjugations(verb: Verb, tense: TenseKey): { pronoun: PronounKey;
 // Types for the component state
 type ProDeckState = 'waiting' | 'revealing' | 'grading' | 'finished';
 
+interface GradeActions {
+  gradeCorrect: () => void;
+  gradeIncorrect: () => void;
+}
+
 interface ProDeckProps {
   verb: Verb;
   boxLevel: number;
@@ -37,6 +42,7 @@ interface ProDeckProps {
   onNext: () => void;
   onReadyForNext?: (ready: boolean) => void;
   onPrimaryAction?: (action: () => void) => void;
+  onGradeActions?: (actions: GradeActions | null) => void;
 }
 
 export default function ProDeck({
@@ -47,6 +53,7 @@ export default function ProDeck({
   onNext,
   onReadyForNext,
   onPrimaryAction,
+  onGradeActions,
 }: ProDeckProps) {
   // revealStep: 0 = nothing, 1 = présent, 2 = passé composé, 3 = imparfait, 4 = futur simple
   const [revealStep, setRevealStep] = useState(0);
@@ -96,6 +103,21 @@ export default function ProDeck({
       onPrimaryAction(() => {});
     }
   }, [state, handleRevealNext, onNext, onPrimaryAction]);
+
+  // Register grading actions with parent for keyboard handling
+  useEffect(() => {
+    if (!onGradeActions) return;
+
+    // Only register when in grading state
+    if (state === 'grading') {
+      onGradeActions({
+        gradeCorrect: () => handleGrade(true),
+        gradeIncorrect: () => handleGrade(false),
+      });
+    } else {
+      onGradeActions(null);
+    }
+  }, [state, handleGrade, onGradeActions]);
 
   // Get revealed tenses
   const revealedTenses = TENSE_ORDER.slice(0, revealStep);

@@ -13,12 +13,21 @@ interface StudySessionProps {
   initialMode?: StudyMode;
 }
 
+// Type for grading actions
+interface GradeActions {
+  gradeCorrect: () => void;
+  gradeIncorrect: () => void;
+}
+
 export default function StudySession({ initialMode = 'typing' }: StudySessionProps) {
   const [mode, setMode] = useState<StudyMode>(initialMode);
   const [readyForNext, setReadyForNext] = useState(false);
 
   // Ref to store the current primary action (set by child components)
   const primaryActionRef = useRef<(() => void) | null>(null);
+
+  // Ref to store grading actions (set by child components when in grading state)
+  const gradeActionsRef = useRef<GradeActions | null>(null);
 
   const {
     currentCard,
@@ -38,6 +47,11 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   // Handle primary action registration from child components
   const handlePrimaryAction = useCallback((action: () => void) => {
     primaryActionRef.current = action;
+  }, []);
+
+  // Handle grading actions registration from child components
+  const handleGradeActions = useCallback((actions: GradeActions | null) => {
+    gradeActionsRef.current = actions;
   }, []);
 
   // Global keyboard handler - robust implementation
@@ -70,6 +84,17 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           setReadyForNext(false);
         }
       }
+
+      // Handle grading keys (1/2 or ArrowLeft/ArrowRight)
+      if (gradeActionsRef.current) {
+        if (e.key === '1' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          gradeActionsRef.current.gradeIncorrect();
+        } else if (e.key === '2' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          gradeActionsRef.current.gradeCorrect();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -81,9 +106,10 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     initializeCards();
   }, [initializeCards]);
 
-  // Reset primary action when mode or card changes
+  // Reset actions when mode or card changes
   useEffect(() => {
     primaryActionRef.current = null;
+    gradeActionsRef.current = null;
   }, [mode, currentCard?.cardId]);
 
   // Get current card's box level
@@ -209,6 +235,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onNext={handleNext}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
+          onGradeActions={handleGradeActions}
         />
       )}
       {mode === 'prodeck' && (
@@ -220,6 +247,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onNext={handleNext}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
+          onGradeActions={handleGradeActions}
         />
       )}
 
