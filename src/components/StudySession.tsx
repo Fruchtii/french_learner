@@ -54,20 +54,25 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     gradeActionsRef.current = actions;
   }, []);
 
-  // Global keyboard handler - robust implementation
+  // Global keyboard handler - window-level for reliability
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // CRITICAL: Check e.target for input elements (more reliable than activeElement)
+      // CRITICAL: Strictly ignore keyboard shortcuts when typing in INPUT/TEXTAREA
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return; // Don't interfere with typing
+      const tagName = target.tagName;
+
+      if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
+        return; // User is typing - don't interfere
       }
 
       // Handle Spacebar
       if (e.key === ' ') {
         e.preventDefault(); // Prevent page scroll
 
-        // If there's a primary action registered, execute it
+        // Mode-specific behavior via primaryActionRef:
+        // - typing mode: Next card (when result is visible)
+        // - flashcard mode: Flip / Next
+        // - prodeck mode: Progressive reveal
         if (primaryActionRef.current) {
           primaryActionRef.current();
         } else if (readyForNext) {
@@ -77,7 +82,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
         }
       }
 
-      // Handle Enter key
+      // Handle Enter key (Next card when ready)
       if (e.key === 'Enter') {
         if (readyForNext) {
           selectNextCard();
@@ -85,7 +90,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
         }
       }
 
-      // Handle grading keys (1/2 or ArrowLeft/ArrowRight)
+      // Handle grading shortcuts (1/2 or Arrow keys)
       if (gradeActionsRef.current) {
         if (e.key === '1' || e.key === 'ArrowLeft') {
           e.preventDefault();
@@ -97,6 +102,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
       }
     };
 
+    // Attach to window for global keyboard handling
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [readyForNext, selectNextCard]);
