@@ -11,9 +11,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
+              <span className="text-white font-bold text-base">vk</span>
             </div>
-            <span className="font-semibold text-xl text-slate-800">VerbeMaître</span>
+            <span className="font-semibold text-xl text-slate-800">vokab</span>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -42,14 +42,13 @@ export default function Home() {
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-              Master French
-              <span className="text-blue-600"> Irregular Verbs</span>
+              Master Your
+              <span className="text-blue-600"> Flashcards</span>
             </h1>
 
             <p className="text-xl text-slate-600 mb-10 leading-relaxed">
-              Conquer the 100 most common irregular French verbs with our intelligent
-              learning system. Track your progress across Présent, Passé Composé,
-              Imparfait, and Futur Simple.
+              Learn vocabulary effectively with our intelligent spaced repetition system.
+              Track your progress and master your cards across multiple study modes.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -78,7 +77,7 @@ export default function Home() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="text-slate-400 text-sm">Verb Trainer</span>
+                <span className="text-slate-400 text-sm">vokab</span>
               </div>
               <div className="p-8">
                 <div className="text-center">
@@ -118,7 +117,7 @@ export default function Home() {
       <section className="py-20 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
-            Why VerbeMaître Works
+            Why Choose vokab
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -130,7 +129,7 @@ export default function Home() {
                 Spaced Repetition
               </h3>
               <p className="text-slate-600">
-                Our SRS algorithm shows you verbs right when you&apos;re about to forget them,
+                Our SRS algorithm shows you cards right when you&apos;re about to forget them,
                 maximizing retention with minimal effort.
               </p>
             </div>
@@ -140,11 +139,11 @@ export default function Home() {
                 <BookOpen className="w-7 h-7 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                Four Essential Tenses
+                Multiple Study Modes
               </h3>
               <p className="text-slate-600">
-                Focus on Présent, Passé Composé, Imparfait, and Futur Simple—the
-                tenses you need for everyday conversation.
+                Choose from Typing, Flashcard, or ProDeck modes to match your learning
+                style and maximize retention.
               </p>
             </div>
 
@@ -157,7 +156,7 @@ export default function Home() {
               </h3>
               <p className="text-slate-600">
                 Watch your progress grow with detailed stats showing mastery
-                percentage for each verb and tense.
+                percentage for each card and deck.
               </p>
             </div>
           </div>
@@ -167,22 +166,18 @@ export default function Home() {
       {/* Stats Section */}
       <section className="py-20 px-6 bg-slate-900 text-white">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold text-blue-400 mb-2">100</div>
-              <div className="text-slate-400">Irregular Verbs</div>
+              <div className="text-4xl font-bold text-blue-400 mb-2">3</div>
+              <div className="text-slate-400">Study Modes</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-green-400 mb-2">4</div>
-              <div className="text-slate-400">Tenses Covered</div>
+              <div className="text-4xl font-bold text-green-400 mb-2">Smart</div>
+              <div className="text-slate-400">Spaced Repetition</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-purple-400 mb-2">600+</div>
-              <div className="text-slate-400">Conjugations</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-yellow-400 mb-2">SRS</div>
-              <div className="text-slate-400">Powered Learning</div>
+              <div className="text-4xl font-bold text-purple-400 mb-2">Fast</div>
+              <div className="text-slate-400">Progress Tracking</div>
             </div>
           </div>
         </div>
@@ -192,10 +187,10 @@ export default function Home() {
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-4">
-            Ready to Master French Verbs?
+            Ready to Master Your Flashcards?
           </h2>
           <p className="text-xl text-slate-600 mb-8">
-            Join now and start your journey to conjugation confidence.
+            Start learning smarter with vokab today.
           </p>
           <Link
             href="/learn"
@@ -212,12 +207,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
+              <span className="text-white font-bold text-xs">vk</span>
             </div>
-            <span className="font-medium text-slate-700">VerbeMaître</span>
+            <span className="font-medium text-slate-700">vokab</span>
           </div>
           <p className="text-slate-500 text-sm">
-            &copy; {new Date().getFullYear()} VerbeMaître. Built for French learners.
+            &copy; {new Date().getFullYear()} vokab. Built for learners.
           </p>
         </div>
       </footer>

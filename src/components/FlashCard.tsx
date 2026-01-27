@@ -96,28 +96,8 @@ export default function FlashCard({
     }
   }, [cardState, hasGraded, handleGrade, onGradeActions]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (cardState === 'question') {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        handleReveal();
-      }
-    } else if (!hasGraded) {
-      if (e.key === '1' || e.key === 'ArrowLeft') {
-        handleGrade(false);
-      } else if (e.key === '2' || e.key === 'ArrowRight') {
-        handleGrade(true);
-      }
-    } else if (hasGraded && e.key === 'Enter') {
-      onNext();
-    }
-  }, [cardState, hasGraded, handleReveal, handleGrade, onNext]);
-
   return (
-    <div
-      className="w-full outline-none"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
+    <div className="w-full"
     >
       {/* Main Card */}
       <div

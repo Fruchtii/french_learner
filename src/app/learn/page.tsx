@@ -16,9 +16,9 @@ export default function LearnPage() {
           </Link>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
+              <span className="text-white font-bold text-sm">vk</span>
             </div>
-            <span className="font-semibold text-lg text-slate-800">VerbeMaître</span>
+            <span className="font-semibold text-lg text-slate-800">vokab</span>
           </div>
         </div>
       </nav>
@@ -28,10 +28,10 @@ export default function LearnPage() {
         {/* Header - More compact */}
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-slate-800 mb-1">
-            Verb Trainer
+            vokab
           </h1>
           <p className="text-slate-500 text-sm">
-            Master French irregular verb conjugations
+            Master your flashcards.
           </p>
         </div>
 
