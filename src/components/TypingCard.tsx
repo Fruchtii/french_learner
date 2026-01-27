@@ -180,7 +180,7 @@ export default function TypingCard({
               key={char}
               onClick={() => handleAccentClick(char)}
               disabled={quizState !== 'answering'}
-              className="w-9 h-9 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-base transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-9 h-9 bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-base font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {char}
             </button>
