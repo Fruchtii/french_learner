@@ -6,7 +6,7 @@ import VerbQuiz from '@/components/VerbQuiz';
 
 export default function LearnPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -23,20 +23,20 @@ export default function LearnPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="pt-24 pb-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">
-              Verb Trainer
-            </h1>
-            <p className="text-slate-600">
-              Practice conjugating French irregular verbs
-            </p>
-          </div>
+      {/* Main Content - Centered vertically */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-20 pb-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            Verb Trainer
+          </h1>
+          <p className="text-slate-600">
+            Practice conjugating French irregular verbs
+          </p>
+        </div>
 
-          {/* Quiz Component */}
+        {/* Quiz Component */}
+        <div className="w-full max-w-xl">
           <VerbQuiz />
         </div>
       </main>

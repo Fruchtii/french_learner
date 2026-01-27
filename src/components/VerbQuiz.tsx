@@ -225,7 +225,7 @@ export default function VerbQuiz() {
                 transition-all duration-200 outline-none
                 ${isShaking ? 'animate-shake' : ''}
                 ${quizState === 'answering'
-                  ? 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                  ? 'bg-gray-50 text-gray-900 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-400'
                   : ''}
                 ${quizState === 'correct'
                   ? 'border-green-500 bg-green-50 text-green-700'
