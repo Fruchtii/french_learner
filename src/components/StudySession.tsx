@@ -58,21 +58,16 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // CRITICAL: Strictly ignore keyboard shortcuts when typing in INPUT/TEXTAREA
-      const target = e.target as HTMLElement;
-      const tagName = target.tagName;
-
-      if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) {
         return; // User is typing - don't interfere
       }
 
-      // Handle Spacebar
+      // Handle Spacebar - Primary action for each mode
       if (e.key === ' ') {
         e.preventDefault(); // Prevent page scroll
 
-        // Mode-specific behavior via primaryActionRef:
-        // - typing mode: Next card (when result is visible)
-        // - flashcard mode: Flip / Next
-        // - prodeck mode: Progressive reveal
+        // Use primaryActionRef if set by child component
         if (primaryActionRef.current) {
           primaryActionRef.current();
         } else if (readyForNext) {
@@ -82,9 +77,14 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
         }
       }
 
-      // Handle Enter key (Next card when ready)
+      // Handle Enter key - Next card or primary action
       if (e.key === 'Enter') {
-        if (readyForNext) {
+        e.preventDefault();
+
+        // Use primaryActionRef if set, otherwise go to next if ready
+        if (primaryActionRef.current) {
+          primaryActionRef.current();
+        } else if (readyForNext) {
           selectNextCard();
           setReadyForNext(false);
         }
@@ -99,6 +99,13 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           e.preventDefault();
           gradeActionsRef.current.gradeCorrect();
         }
+      }
+
+      // ArrowRight as alternative next (when no grading active)
+      if (e.key === 'ArrowRight' && !gradeActionsRef.current && readyForNext) {
+        e.preventDefault();
+        selectNextCard();
+        setReadyForNext(false);
       }
     };
 

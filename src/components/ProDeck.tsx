@@ -244,12 +244,12 @@ export default function ProDeck({
               </div>
 
               {/* Reveal Next Button (if not all revealed) */}
-              {state === 'revealing' && nextTense && (
+              {state === 'revealing' && nextTenseNames && (
                 <button
                   onClick={handleRevealNext}
                   className="w-full py-4 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 border border-purple-200"
                 >
-                  Reveal {tenseNames[nextTense]}
+                  Reveal {nextTenseNames}
                   <ChevronRight className="w-5 h-5" />
                 </button>
               )}
