@@ -167,15 +167,20 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   };
 
   const handleSave = async () => {
+    console.log('=== SAVE DECK: Starting save process ===');
+
     // Step 1: Get current user
     const supabase = getSupabase();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
+      console.error('❌ Auth error - user not authenticated:', userError);
       alert('Please sign in to save decks.');
-      console.error('Auth error:', userError);
       return;
     }
+
+    console.log('✅ User authenticated:', user.id);
+    console.log('   Email:', user.email);
 
     if (!title.trim()) {
       alert('Please enter a deck title.');
@@ -217,23 +222,50 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
         }
       } else {
         // Create new deck - CRITICAL: Return the new ID
+        const deckPayload = {
+          title,
+          description: description || null,
+          is_public: isPublic,
+          created_by: user.id,
+        };
+
+        console.log('📝 Creating new deck with payload:', deckPayload);
+
         const { data: newDeck, error: deckError } = await supabase
           .from('decks')
-          .insert({
-            title,
-            description: description || null,
-            is_public: isPublic,
-            created_by: user.id,
-          })
+          .insert(deckPayload)
           .select()
           .single();
 
         if (deckError) {
-          console.error('Deck insert error:', deckError);
+          console.error('Deck insert error (FULL DETAILS):', deckError);
+          console.error('Error code:', deckError.code);
+          console.error('Error message:', deckError.message);
+          console.error('Error details:', deckError.details);
+          console.error('Error hint:', deckError.hint);
 
           // Check for RLS permission denied error
           if (deckError.code === '42501' || deckError.message?.includes('permission denied')) {
-            alert('Permission denied: Unable to create deck. Please check that:\n1. You are signed in\n2. Row Level Security policies allow deck creation\n3. Your authentication token is valid');
+            alert(`❌ PERMISSION DENIED - Cannot create deck
+
+Error Code: ${deckError.code || 'unknown'}
+Error Message: ${deckError.message || 'unknown'}
+
+Possible fixes:
+1. Run fix_rls_permissions.sql in Supabase SQL Editor
+2. Verify you are signed in (User ID: ${user.id})
+3. Check RLS policies allow authenticated users to INSERT decks
+
+Full error logged to console.`);
+          } else {
+            alert(`❌ DECK CREATION FAILED
+
+Error Code: ${deckError.code || 'unknown'}
+Error Message: ${deckError.message || 'unknown'}
+${deckError.hint ? `\nHint: ${deckError.hint}` : ''}
+
+User ID: ${user.id}
+Full error logged to console - please check developer tools.`);
           }
 
           throw deckError;
@@ -283,11 +315,36 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
         });
 
       if (cardsError) {
-        console.error('Cards insert error:', cardsError);
+        console.error('Cards insert error (FULL DETAILS):', cardsError);
+        console.error('Error code:', cardsError.code);
+        console.error('Error message:', cardsError.message);
+        console.error('Error details:', cardsError.details);
+        console.error('Error hint:', cardsError.hint);
 
         // Check for RLS permission denied error
         if (cardsError.code === '42501' || cardsError.message?.includes('permission denied')) {
-          alert('Permission denied: Unable to save cards. Please check that:\n1. You are signed in\n2. Row Level Security policies are configured correctly\n3. You own this deck');
+          alert(`❌ PERMISSION DENIED - Cannot save cards
+
+Error Code: ${cardsError.code || 'unknown'}
+Error Message: ${cardsError.message || 'unknown'}
+
+Possible fixes:
+1. Run fix_rls_permissions.sql in Supabase SQL Editor
+2. Verify you are signed in (User ID: ${user.id})
+3. Verify RLS policies allow INSERT on cards table
+4. Ensure you own this deck (Deck ID: ${finalDeckId})
+
+Full error logged to console.`);
+        } else {
+          alert(`❌ CARDS SAVE FAILED
+
+Error Code: ${cardsError.code || 'unknown'}
+Error Message: ${cardsError.message || 'unknown'}
+${cardsError.hint ? `\nHint: ${cardsError.hint}` : ''}
+
+User ID: ${user.id}
+Deck ID: ${finalDeckId}
+Full error logged to console - please check developer tools.`);
         }
 
         throw cardsError;
