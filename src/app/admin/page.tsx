@@ -101,7 +101,7 @@ export default function AdminDashboard() {
       if (decksError) throw decksError;
 
       // Get card counts for each deck
-      const deckIds = decksData?.map(d => d.id) || [];
+      const deckIds = decksData?.map((d: any) => d.id) || [];
       const { data: cardCounts, error: cardError } = await supabase
         .from('cards')
         .select('deck_id')
@@ -111,12 +111,12 @@ export default function AdminDashboard() {
 
       // Count cards per deck
       const countMap: Record<string, number> = {};
-      cardCounts?.forEach(card => {
+      cardCounts?.forEach((card: any) => {
         countMap[card.deck_id] = (countMap[card.deck_id] || 0) + 1;
       });
 
       // Format the data
-      const formattedDecks: DeckWithOwner[] = decksData?.map(deck => ({
+      const formattedDecks: DeckWithOwner[] = decksData?.map((deck: any) => ({
         id: deck.id,
         title: deck.title,
         description: deck.description,
