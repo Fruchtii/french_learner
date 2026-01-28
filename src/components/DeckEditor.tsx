@@ -317,115 +317,112 @@ Full error logged to console - please check developer tools.`);
       // Step 4: Insert/Update Cards
       const activeCards = cards.filter(c => !c._deleted);
 
-      // Build card payloads - only include id for existing cards (updates)
-      const cardsToSave = activeCards.map(card => {
-        const payload: any = {
+      // Split cards into new (no id) and existing (has id)
+      const newCards = activeCards.filter(card => !card.id);
+      const existingCards = activeCards.filter(card => card.id);
+
+      console.log(`Saving cards: ${newCards.length} new, ${existingCards.length} existing`);
+
+      // INSERT new cards (no id field)
+      if (newCards.length > 0) {
+        const newCardPayloads = newCards.map(card => ({
           deck_id: finalDeckId!,
           front: card.front.trim(),
           back: card.back.trim(),
           data: { type: 'flashcard' },
           order_index: card.order_index,
-        };
+          // No id field - database will auto-generate
+        }));
 
-        // Only include id if it exists (for updates)
-        // Omit id for new cards so database can auto-generate UUID
-        if (card.id) {
-          payload.id = card.id;
+        console.log('Inserting new cards:', newCardPayloads.map(c => ({ front: c.front.substring(0, 20) })));
+
+        const { error: insertError } = await supabase
+          .from('cards')
+          .insert(newCardPayloads);
+
+        if (insertError) {
+          console.error('New cards insert error:', insertError);
+          throw insertError;
         }
+      }
 
-        return payload;
-      });
+      // UPDATE existing cards (with id field)
+      if (existingCards.length > 0) {
+        const existingCardPayloads = existingCards.map(card => ({
+          id: card.id!,
+          deck_id: finalDeckId!,
+          front: card.front.trim(),
+          back: card.back.trim(),
+          data: { type: 'flashcard' },
+          order_index: card.order_index,
+        }));
 
-      console.log(`Saving ${cardsToSave.length} cards to deck ${finalDeckId}`);
-      console.log('Cards payload:', cardsToSave.map(c => ({ id: c.id || 'NEW', front: c.front.substring(0, 20) })));
+        console.log('Updating existing cards:', existingCardPayloads.map(c => ({ id: c.id, front: c.front.substring(0, 20) })));
 
-      const { error: cardsError } = await supabase
-        .from('cards')
-        .upsert(cardsToSave, {
-          onConflict: 'id',
-        });
+        const { error: updateError } = await supabase
+          .from('cards')
+          .upsert(existingCardPayloads, {
+            onConflict: 'id',
+          });
 
-      if (cardsError) {
-        console.error('Cards insert error (FULL DETAILS):', cardsError);
-        console.error('Error code:', cardsError.code);
-        console.error('Error message:', cardsError.message);
-        console.error('Error details:', cardsError.details);
-        console.error('Error hint:', cardsError.hint);
-
-        // Check for NOT NULL constraint violation (23502)
-        if (cardsError.code === '23502') {
-          alert(`❌ DATABASE CONSTRAINT ERROR - Cannot save cards
-
-Error: NOT NULL constraint violation (23502)
-User ID: ${user.id}
-Deck ID: ${finalDeckId}
-
-This error has been fixed in the latest version.
-Please refresh the page and try again.
-
-If the problem persists:
-1. Clear your browser cache
-2. Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
-3. Try creating the deck again
-
-Full error logged to console.`);
+        if (updateError) {
+          console.error('Existing cards update error:', updateError);
+          throw updateError;
         }
-        // Check for Foreign Key Violation
-        else if (cardsError.code === '23503') {
-          alert(`❌ FOREIGN KEY VIOLATION - Cannot save cards
-
-Error: Foreign Key Violation (23503)
-User ID: ${user.id}
-Deck ID: ${finalDeckId}
-
-This usually means:
-- The deck was deleted while you were editing
-- Database relationships are broken
-
-FIX:
-1. Go back to the dashboard
-2. Try creating the deck again from scratch
-
-Full error logged to console.`);
-        }
-        // Check for RLS permission denied error
-        else if (cardsError.code === '42501' || cardsError.message?.includes('permission denied')) {
-          alert(`❌ PERMISSION DENIED - Cannot save cards
-
-Error Code: ${cardsError.code || 'unknown'}
-Error Message: ${cardsError.message || 'unknown'}
-
-Possible fixes:
-1. Run fix_rls_permissions.sql in Supabase SQL Editor
-2. Verify you are signed in (User ID: ${user.id})
-3. Verify RLS policies allow INSERT on cards table
-4. Ensure you own this deck (Deck ID: ${finalDeckId})
-
-Full error logged to console.`);
-        } else {
-          alert(`❌ CARDS SAVE FAILED
-
-Error Code: ${cardsError.code || 'unknown'}
-Error Message: ${cardsError.message || 'unknown'}
-${cardsError.hint ? `\nHint: ${cardsError.hint}` : ''}
-
-User ID: ${user.id}
-Deck ID: ${finalDeckId}
-Full error logged to console - please check developer tools.`);
-        }
-
-        throw cardsError;
       }
 
       // Success! Redirect to dashboard
-      console.log('Deck saved successfully!');
+      console.log('✅ Deck and all cards saved successfully!');
       router.push('/dashboard');
-    } catch (error) {
-      console.error('Error saving deck:', error);
-      if (error instanceof Error) {
-        alert(`Failed to save deck: ${error.message}`);
+    } catch (error: any) {
+      console.error('❌ Error saving deck:', error);
+
+      // Check for specific error codes
+      if (error?.code === '23502') {
+        alert(`❌ DATABASE CONSTRAINT ERROR
+
+Error: NOT NULL constraint violation (23502)
+
+This is a database schema issue. The error has been fixed in the latest code.
+
+FIX:
+1. Hard refresh the page (Ctrl+Shift+R or Cmd+Shift+R)
+2. Try saving again
+
+Full error logged to console.`);
+      } else if (error?.code === '23503') {
+        alert(`❌ FOREIGN KEY VIOLATION
+
+Error: ${error.message || 'Foreign key constraint violated'}
+
+Possible causes:
+- Your user profile is missing (run sync_profiles_and_fix_access.sql)
+- The deck was deleted while editing
+
+FIX:
+1. Sign out and sign back in to regenerate your profile
+2. Or run sync_profiles_and_fix_access.sql in Supabase
+
+Full error logged to console.`);
+      } else if (error?.code === '42501') {
+        alert(`❌ PERMISSION DENIED
+
+Error: Row Level Security policy violation
+
+FIX:
+1. Run fix_rls_permissions.sql in Supabase SQL Editor
+2. Verify you are signed in
+3. Check RLS policies allow deck/card creation
+
+Full error logged to console.`);
+      } else if (error instanceof Error) {
+        alert(`❌ Failed to save deck
+
+Error: ${error.message}
+
+Check the browser console for more details.`);
       } else {
-        alert('Failed to save deck. Please check console for details.');
+        alert('❌ Failed to save deck. Please check console for details.');
       }
     } finally {
       setSaving(false);
