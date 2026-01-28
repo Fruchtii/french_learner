@@ -282,8 +282,8 @@ export default function TypingCard({
       <div className="px-5 pb-4">
         <p className="text-center text-slate-400 text-xs">
           {quizState === 'answering'
-            ? 'Press Enter to check'
-            : 'Press Space or Enter for next card'}
+            ? 'Press Enter to check answer'
+            : 'Press Space or Enter to continue'}
         </p>
       </div>
     </div>
