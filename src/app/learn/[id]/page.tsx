@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
-import StudySession from '@/components/StudySession';
+import DeckStudySession from '@/components/DeckStudySession';
 import AuthButton from '@/components/AuthButton';
 import { getSupabase, type Deck } from '@/lib/supabase';
 
@@ -168,7 +168,7 @@ export default function LearnDeckPage() {
         </div>
 
         {/* Study Session Component */}
-        <StudySession initialMode="typing" />
+        <DeckStudySession deckId={deckId} />
       </main>
     </div>
   );
