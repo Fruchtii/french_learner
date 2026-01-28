@@ -60,18 +60,24 @@ A flashcard application for learning French verb conjugations with three interac
 
 **Features:**
 - Progressive reveal of ALL conjugations for a verb
-- Reveals one complete tense at a time with all 6 pronouns:
-  1. **Présent** (blue gradient) - all 6 conjugations
-  2. **Passé Composé** (green gradient) - all 6 conjugations
-  3. **Imparfait** (amber gradient) - all 6 conjugations
-  4. **Futur Simple** (rose gradient) - all 6 conjugations
+- **IMPORTANT REVEAL LOGIC** (DO NOT CHANGE):
+  - **State 0**: Show infinitive + meaning only
+  - **State 1** (First Press): Reveal ENTIRE **Présent** table (all 6 conjugations)
+  - **State 2** (Second Press): Reveal ENTIRE **Passé Composé** table (Présent stays visible)
+  - **State 3** (Third Press): Reveal **Imparfait & Futur Simple** tables together (all 4 tenses now visible)
+  - **State 4** (Fourth Press): Show grading buttons ("I knew it all" / "I struggled")
 - Each tense shown in a colored card with 2x3 grid of conjugations
-- Progress dots indicator (4 dots showing which tenses are revealed)
+- Progress dots indicator showing which tenses are revealed
 - Self-grading after all tenses revealed
 
+**Implementation Details:**
+- Uses `revealStep` state: 0 (nothing) → 1 (présent) → 2 (présent + passé composé) → 3 (all 4 tenses)
+- Tense order: `['present', 'passeCompose', 'imparfait', 'futurSimple']`
+- Step 3 reveals BOTH imparfait and futurSimple together, NOT one at a time
+
 **Keyboard Shortcuts:**
-- `Space` - Reveal next tense (during reveal) or go to next verb (after grading)
-- `Enter` - Go to next verb (after grading)
+- `Space` - Reveal next tense group (during reveal) or go to next verb (after grading)
+- `Enter` - Same as Space (reveal or next)
 - `1` or `←` (Left Arrow) - Mark as "I struggled" (incorrect)
 - `2` or `→` (Right Arrow) - Mark as "I knew it all" (correct)
 
@@ -196,12 +202,21 @@ The app features global keyboard handling that works across all study modes:
 
 ### Universal Shortcuts:
 - `Space` - Primary action (reveal, next card, etc.)
-- `Enter` - Alternative next card action
+- `Enter` - Alternative primary action or next card
 - `1` or `←` (Left Arrow) - Grade as incorrect/forgot
-- `2` or `→` (Right Arrow) - Grade as correct/knew it
+- `2` or `→` (Right Arrow) - Grade as correct/knew it, or next card when not grading
+- `ArrowRight` - Alternative next card navigation (when not in grading mode)
+
+### Implementation Details:
+- Uses `window.addEventListener('keydown')` for global capture
+- Uses `primaryActionRef` and `gradeActionsRef` for mode-specific behavior
+- Child components (TypingCard, FlashCard, ProDeck) register their actions via callbacks
+- `preventDefault()` called on Space and Enter to prevent default browser behavior
 
 ### Smart Context Detection:
 - Keyboard shortcuts are **disabled** when user is typing in an input field
+- Uses `document.activeElement` to check if focus is on INPUT or TEXTAREA
+- Safety check: `if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return;`
 - Prevents accidental navigation while entering answers
 - Shortcuts activate only when appropriate for current card state
 
@@ -315,17 +330,35 @@ Uses Supabase Auth with the following:
 ## Important Implementation Notes
 
 ### Do NOT Change:
-1. **Text color for correct answers** - Must stay `text-slate-900` for visibility
+1. **Text color for correct answers** - Must stay `text-slate-900` with `text-base` size for visibility
 2. **Pronoun validation logic** - Pronouns must remain optional
-3. **ProDeck reveal behavior** - Must reveal full tense conjugation tables, not character-by-character
+3. **ProDeck reveal behavior** - CRITICAL:
+   - State 0: Show only infinitive + meaning
+   - State 1: Reveal ENTIRE Présent (6 conjugations)
+   - State 2: Reveal ENTIRE Passé Composé (Présent stays visible)
+   - State 3: Reveal BOTH Imparfait AND Futur Simple together
+   - DO NOT reveal one conjugation at a time
+   - DO NOT reveal tenses one-by-one after step 2
+   - `revealStep` must be 0→1→2→3, NOT 0→1→2→3→4 for tenses
 4. **Keyboard shortcuts** - Users rely on Space, Enter, and Arrow key navigation
+   - Must use `document.activeElement` for INPUT/TEXTAREA detection
+   - Must call `preventDefault()` on Space and Enter
+   - Must work globally via window listener
 5. **Dashboard verb practice card** - Keep as featured element above custom decks
 
 ### Key Files:
 - `src/lib/validation.ts` - Answer validation (keep pronoun stripping)
-- `src/components/ProDeck.tsx` - Tense-by-tense reveal (don't make character-based)
-- `src/components/TypingCard.tsx` - Answer text color must be dark
+- `src/components/ProDeck.tsx` - Tense-by-tense reveal with grouped final step
+- `src/components/TypingCard.tsx` - Answer text must be `text-slate-900 text-base`
+- `src/components/StudySession.tsx` - Global keyboard handler with safety checks
 - `src/app/dashboard/page.tsx` - Keep verb practice card prominent
+
+### Common Mistakes to Avoid:
+- ❌ Don't make ProDeck reveal 4 separate steps for 4 tenses (it's 3 steps: présent, passé composé, imparfait+futur)
+- ❌ Don't make ProDeck reveal character-by-character like custom decks
+- ❌ Don't use `e.target` for keyboard safety check (use `document.activeElement`)
+- ❌ Don't forget `preventDefault()` on Space key (prevents page scroll)
+- ❌ Don't make answer text lighter than `text-slate-900` in typing mode
 
 ---
 
