@@ -244,8 +244,27 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           console.error('Error details:', deckError.details);
           console.error('Error hint:', deckError.hint);
 
+          // Check for Foreign Key Violation (User Profile Missing)
+          if (deckError.code === '23503') {
+            alert(`❌ USER PROFILE MISSING - Cannot create deck
+
+Error: Foreign Key Violation (23503)
+User ID: ${user.id}
+
+Your user profile is missing from the database.
+
+FIX:
+1. Run sync_profiles_and_fix_access.sql in Supabase SQL Editor
+   (This will sync all users from auth.users to profiles)
+
+ALTERNATIVE:
+2. Sign out and sign back in to regenerate your profile
+
+After fixing, try saving the deck again.
+Full error logged to console.`);
+          }
           // Check for RLS permission denied error
-          if (deckError.code === '42501' || deckError.message?.includes('permission denied')) {
+          else if (deckError.code === '42501' || deckError.message?.includes('permission denied')) {
             alert(`❌ PERMISSION DENIED - Cannot create deck
 
 Error Code: ${deckError.code || 'unknown'}
@@ -321,8 +340,26 @@ Full error logged to console - please check developer tools.`);
         console.error('Error details:', cardsError.details);
         console.error('Error hint:', cardsError.hint);
 
+        // Check for Foreign Key Violation
+        if (cardsError.code === '23503') {
+          alert(`❌ FOREIGN KEY VIOLATION - Cannot save cards
+
+Error: Foreign Key Violation (23503)
+User ID: ${user.id}
+Deck ID: ${finalDeckId}
+
+This usually means:
+- The deck was deleted while you were editing
+- Database relationships are broken
+
+FIX:
+1. Go back to the dashboard
+2. Try creating the deck again from scratch
+
+Full error logged to console.`);
+        }
         // Check for RLS permission denied error
-        if (cardsError.code === '42501' || cardsError.message?.includes('permission denied')) {
+        else if (cardsError.code === '42501' || cardsError.message?.includes('permission denied')) {
           alert(`❌ PERMISSION DENIED - Cannot save cards
 
 Error Code: ${cardsError.code || 'unknown'}
