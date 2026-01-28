@@ -316,16 +316,28 @@ Full error logged to console - please check developer tools.`);
 
       // Step 4: Insert/Update Cards
       const activeCards = cards.filter(c => !c._deleted);
-      const cardsToSave = activeCards.map(card => ({
-        id: card.id, // undefined for new cards
-        deck_id: finalDeckId!,
-        front: card.front.trim(),
-        back: card.back.trim(),
-        data: { type: 'flashcard' },
-        order_index: card.order_index,
-      }));
+
+      // Build card payloads - only include id for existing cards (updates)
+      const cardsToSave = activeCards.map(card => {
+        const payload: any = {
+          deck_id: finalDeckId!,
+          front: card.front.trim(),
+          back: card.back.trim(),
+          data: { type: 'flashcard' },
+          order_index: card.order_index,
+        };
+
+        // Only include id if it exists (for updates)
+        // Omit id for new cards so database can auto-generate UUID
+        if (card.id) {
+          payload.id = card.id;
+        }
+
+        return payload;
+      });
 
       console.log(`Saving ${cardsToSave.length} cards to deck ${finalDeckId}`);
+      console.log('Cards payload:', cardsToSave.map(c => ({ id: c.id || 'NEW', front: c.front.substring(0, 20) })));
 
       const { error: cardsError } = await supabase
         .from('cards')
@@ -340,8 +352,26 @@ Full error logged to console - please check developer tools.`);
         console.error('Error details:', cardsError.details);
         console.error('Error hint:', cardsError.hint);
 
+        // Check for NOT NULL constraint violation (23502)
+        if (cardsError.code === '23502') {
+          alert(`❌ DATABASE CONSTRAINT ERROR - Cannot save cards
+
+Error: NOT NULL constraint violation (23502)
+User ID: ${user.id}
+Deck ID: ${finalDeckId}
+
+This error has been fixed in the latest version.
+Please refresh the page and try again.
+
+If the problem persists:
+1. Clear your browser cache
+2. Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
+3. Try creating the deck again
+
+Full error logged to console.`);
+        }
         // Check for Foreign Key Violation
-        if (cardsError.code === '23503') {
+        else if (cardsError.code === '23503') {
           alert(`❌ FOREIGN KEY VIOLATION - Cannot save cards
 
 Error: Foreign Key Violation (23503)
