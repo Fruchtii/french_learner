@@ -240,7 +240,7 @@ export default function TypingCard({
             </div>
             <p className="text-slate-600 text-sm">
               Correct answer:{' '}
-              <span className="font-bold text-slate-800 font-mono">
+              <span className="font-bold text-slate-900 font-mono text-base">
                 {correctAnswer}
               </span>
             </p>
