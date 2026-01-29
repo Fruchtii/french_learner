@@ -174,16 +174,25 @@ export default function ProDeck({
 
           {/* Progress Indicator */}
           <div className="flex justify-center gap-2 mb-4">
-            {TENSE_ORDER.map((tense, i) => (
-              <div
-                key={tense}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  i < revealStep
-                    ? 'bg-purple-500'
-                    : 'bg-slate-200'
-                }`}
-              />
-            ))}
+            {[0, 1, 2, 3].map((i) => {
+              // Determine if this dot should be filled
+              // Step 1: dot 0 filled (présent)
+              // Step 2: dots 0,1 filled (présent, passé composé)
+              // Step 3: dots 0,1,2,3 all filled (all 4 tenses)
+              const isFilled =
+                (revealStep === 1 && i === 0) ||
+                (revealStep === 2 && i <= 1) ||
+                (revealStep >= 3 && i <= 3);
+
+              return (
+                <div
+                  key={i}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    isFilled ? 'bg-purple-500' : 'bg-slate-200'
+                  }`}
+                />
+              );
+            })}
           </div>
 
           {/* State: Waiting (Nothing revealed) */}
