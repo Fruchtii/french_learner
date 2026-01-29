@@ -55,14 +55,14 @@ export default function ProDeck({
   onPrimaryAction,
   onGradeActions,
 }: ProDeckProps) {
-  // revealStep: 0 = nothing, 1 = présent, 2 = passé composé, 3 = imparfait, 4 = futur simple
+  // revealStep: 0 = nothing, 1 = présent, 2 = présent+passé composé, 3 = all 4 tenses, 4 = graded
   const [revealStep, setRevealStep] = useState(0);
   const [hasGraded, setHasGraded] = useState(false);
 
   // Derived state
   const state: ProDeckState =
     revealStep === 0 ? 'waiting' :
-    revealStep < 4 ? 'revealing' :
+    revealStep < 3 ? 'revealing' :
     !hasGraded ? 'grading' : 'finished';
 
   // Reset state when verb changes
@@ -79,7 +79,7 @@ export default function ProDeck({
 
   // Reveal next tense
   const handleRevealNext = useCallback(() => {
-    if (revealStep < 4) {
+    if (revealStep < 3) {
       setRevealStep(prev => prev + 1);
     }
   }, [revealStep]);
@@ -120,8 +120,18 @@ export default function ProDeck({
   }, [state, handleGrade, onGradeActions]);
 
   // Get revealed tenses
-  const revealedTenses = TENSE_ORDER.slice(0, revealStep);
-  const nextTense = revealStep < 4 ? TENSE_ORDER[revealStep] : null;
+  // Step 0: nothing, Step 1: présent, Step 2: présent+passé composé, Step 3: all 4
+  const revealedTenses =
+    revealStep === 0 ? [] :
+    revealStep === 1 ? [TENSE_ORDER[0]] :
+    revealStep === 2 ? [TENSE_ORDER[0], TENSE_ORDER[1]] :
+    TENSE_ORDER; // revealStep 3: all 4 tenses
+
+  const nextTenseNames =
+    revealStep === 0 ? tenseNames.present :
+    revealStep === 1 ? tenseNames.passeCompose :
+    revealStep === 2 ? `${tenseNames.imparfait} & ${tenseNames.futurSimple}` :
+    null;
 
   return (
     <div className="w-full outline-none">
@@ -234,12 +244,12 @@ export default function ProDeck({
               </div>
 
               {/* Reveal Next Button (if not all revealed) */}
-              {state === 'revealing' && nextTense && (
+              {state === 'revealing' && nextTenseNames && (
                 <button
                   onClick={handleRevealNext}
                   className="w-full py-4 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 border border-purple-200"
                 >
-                  Reveal {tenseNames[nextTense]}
+                  Reveal {nextTenseNames}
                   <ChevronRight className="w-5 h-5" />
                 </button>
               )}

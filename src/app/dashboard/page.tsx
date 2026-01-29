@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil } from 'lucide-react';
+import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil, Sparkles } from 'lucide-react';
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
 import type { Session } from '@supabase/supabase-js';
@@ -165,6 +165,48 @@ export default function DashboardPage() {
             >
               <Plus className="w-5 h-5" />
               Create New Deck
+            </Link>
+          </div>
+
+          {/* Verb Conjugation Practice Card */}
+          <div className="mb-8">
+            <Link
+              href="/learn"
+              className="block group bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl shadow-lg border-2 border-purple-400 hover:shadow-xl hover:scale-[1.02] transition-all overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
+                    <span>Interactive Study</span>
+                  </div>
+                </div>
+
+                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-100 transition-colors">
+                  French Verb Conjugation Practice
+                </h3>
+
+                <p className="text-purple-100 mb-4">
+                  Master French irregular verbs with 3 study modes: Typing, Flashcards, and ProDeck progressive reveal
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-purple-100">
+                    <span className="font-semibold text-white">5 verbs</span> • <span className="font-semibold text-white">4 tenses</span> • <span className="font-semibold text-white">120 cards</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-white opacity-90 group-hover:opacity-100 transition-opacity">
+                    <span className="text-sm font-medium">Start Learning</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Animated Progress Bar */}
+              <div className="h-1.5 bg-purple-800/50">
+                <div className="h-full bg-gradient-to-r from-white/60 to-purple-200 w-0 group-hover:w-full transition-all duration-700" />
+              </div>
             </Link>
           </div>
 
