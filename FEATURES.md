@@ -64,16 +64,18 @@ A flashcard application for learning French verb conjugations with three interac
   - **State 0**: Show infinitive + meaning only
   - **State 1** (First Press): Reveal ENTIRE **Présent** table (all 6 conjugations)
   - **State 2** (Second Press): Reveal ENTIRE **Passé Composé** table (Présent stays visible)
-  - **State 3** (Third Press): Reveal **Imparfait & Futur Simple** tables together (all 4 tenses now visible)
-  - **State 4** (Fourth Press): Show grading buttons ("I knew it all" / "I struggled")
+  - **State 3** (Third Press): Reveal ENTIRE **Imparfait** table (Présent + Passé Composé stay visible)
+  - **State 4** (Fourth Press): Reveal ENTIRE **Futur Simple** table (all 4 tenses now visible)
+  - **After State 4**: Show grading buttons ("I knew it all" / "I struggled")
 - Each tense shown in a colored card with 2x3 grid of conjugations
-- Progress dots indicator showing which tenses are revealed
+- Progress dots indicator showing which tenses are revealed (4 dots total)
 - Self-grading after all tenses revealed
 
 **Implementation Details:**
-- Uses `revealStep` state: 0 (nothing) → 1 (présent) → 2 (présent + passé composé) → 3 (all 4 tenses)
+- Uses `revealStep` state: 0 (nothing) → 1 (présent) → 2 (+passé composé) → 3 (+imparfait) → 4 (+futur)
 - Tense order: `['present', 'passeCompose', 'imparfait', 'futurSimple']`
-- Step 3 reveals BOTH imparfait and futurSimple together, NOT one at a time
+- Revealed tenses: `TENSE_ORDER.slice(0, revealStep)` - reveals one tense at a time
+- Each press reveals the NEXT complete tense table, keeping previous ones visible
 
 **Keyboard Shortcuts:**
 - `Space` - Reveal next tense group (during reveal) or go to next verb (after grading)
@@ -336,10 +338,11 @@ Uses Supabase Auth with the following:
    - State 0: Show only infinitive + meaning
    - State 1: Reveal ENTIRE Présent (6 conjugations)
    - State 2: Reveal ENTIRE Passé Composé (Présent stays visible)
-   - State 3: Reveal BOTH Imparfait AND Futur Simple together
-   - DO NOT reveal one conjugation at a time
-   - DO NOT reveal tenses one-by-one after step 2
-   - `revealStep` must be 0→1→2→3, NOT 0→1→2→3→4 for tenses
+   - State 3: Reveal ENTIRE Imparfait (Présent + Passé Composé stay visible)
+   - State 4: Reveal ENTIRE Futur Simple (all 4 tenses visible)
+   - DO NOT reveal one conjugation at a time (always full tables)
+   - Each press reveals ONE complete tense table
+   - `revealStep` must be 0→1→2→3→4, with 4 being all tenses revealed
 4. **Keyboard shortcuts** - Users rely on Space, Enter, and Arrow key navigation
    - Must use `document.activeElement` for INPUT/TEXTAREA detection
    - Must call `preventDefault()` on Space and Enter
@@ -348,17 +351,20 @@ Uses Supabase Auth with the following:
 
 ### Key Files:
 - `src/lib/validation.ts` - Answer validation (keep pronoun stripping)
-- `src/components/ProDeck.tsx` - Tense-by-tense reveal with grouped final step
+- `src/components/ProDeck.tsx` - Tense-by-tense reveal (one tense per press, 4 steps total)
 - `src/components/TypingCard.tsx` - Answer text must be `text-slate-900 text-base`
 - `src/components/StudySession.tsx` - Global keyboard handler with safety checks
 - `src/app/dashboard/page.tsx` - Keep verb practice card prominent
+- `src/app/learn/page.tsx` - Must use StudySession directly (no deck redirect)
 
 ### Common Mistakes to Avoid:
-- ❌ Don't make ProDeck reveal 4 separate steps for 4 tenses (it's 3 steps: présent, passé composé, imparfait+futur)
-- ❌ Don't make ProDeck reveal character-by-character like custom decks
+- ❌ Don't make ProDeck reveal character-by-character (must reveal full tense tables)
+- ❌ Don't reveal multiple tenses at once (each press reveals ONE tense table)
+- ❌ Don't make ProDeck like DeckStudySession (verb ProDeck shows full conjugation tables)
 - ❌ Don't use `e.target` for keyboard safety check (use `document.activeElement`)
 - ❌ Don't forget `preventDefault()` on Space key (prevents page scroll)
 - ❌ Don't make answer text lighter than `text-slate-900` in typing mode
+- ❌ Don't redirect /learn to a deck (must show StudySession directly for verb practice)
 
 ---
 
