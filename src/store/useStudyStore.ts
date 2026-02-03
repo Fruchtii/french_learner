@@ -49,6 +49,10 @@ interface StudyState {
   // Current card being studied
   currentCard: CurrentCard | null;
 
+  // ProDeck verb rotation (to ensure all verbs are shown)
+  proDeckVerbIndex: number;
+  proDeckVerbsShown: Set<string>;
+
   // Session statistics
   sessionStats: {
     cardsReviewed: number;
@@ -62,6 +66,7 @@ interface StudyState {
   submitResult: (verbId: string, tense: TenseKey, pronoun: PronounKey, isCorrect: boolean) => void;
   getNextCard: () => CurrentCard | null;
   selectNextCard: () => void;
+  selectNextVerbForProDeck: () => void;
   resetSession: () => void;
   getProgress: () => { total: number; due: number; mastered: number; learning: number };
 
@@ -134,6 +139,8 @@ export const useStudyStore = create<StudyState>((set, get) => ({
   lastSyncError: null,
   userProgress: {},
   currentCard: null,
+  proDeckVerbIndex: 0,
+  proDeckVerbsShown: new Set<string>(),
   sessionStats: {
     cardsReviewed: 0,
     correctCount: 0,
@@ -265,6 +272,40 @@ export const useStudyStore = create<StudyState>((set, get) => ({
   selectNextCard: () => {
     const nextCard = get().getNextCard();
     set({ currentCard: nextCard });
+  },
+
+  // Select next verb for ProDeck mode (cycles through all verbs)
+  selectNextVerbForProDeck: () => {
+    const { proDeckVerbIndex, proDeckVerbsShown } = get();
+
+    // Get next verb in rotation
+    const nextVerb = verbs[proDeckVerbIndex % verbs.length];
+
+    // Create a card for this verb (use first tense/pronoun as placeholder)
+    const tenses: TenseKey[] = ['present', 'passeCompose', 'imparfait', 'futurSimple'];
+    const pronouns: PronounKey[] = ['je', 'tu', 'il', 'nous', 'vous', 'ils'];
+
+    const card: CurrentCard = {
+      verb: nextVerb,
+      tense: tenses[0], // Placeholder - ProDeck shows all tenses
+      pronoun: pronouns[0], // Placeholder - ProDeck shows all pronouns
+      cardId: getCardId(nextVerb.id, tenses[0], pronouns[0]),
+    };
+
+    // Update shown verbs set
+    const newShownVerbs = new Set(proDeckVerbsShown);
+    newShownVerbs.add(nextVerb.id);
+
+    // Reset if all verbs have been shown
+    if (newShownVerbs.size === verbs.length) {
+      newShownVerbs.clear();
+    }
+
+    set({
+      currentCard: card,
+      proDeckVerbIndex: proDeckVerbIndex + 1,
+      proDeckVerbsShown: newShownVerbs,
+    });
   },
 
   // Reset session statistics
