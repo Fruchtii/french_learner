@@ -94,16 +94,17 @@ A flashcard application for learning French verb conjugations with three interac
 ## Study Controls
 
 ### Shuffle Mode
-**Available in:** Verb Conjugation Practice (`/learn`)
-**Component:** `src/components/StudySession.tsx`
+**Available in:** Both Verb Conjugation Practice (`/learn`) and Custom Deck Study (`/learn/[id]`)
+**Components:** `src/components/StudySession.tsx` and `src/components/DeckStudySession.tsx`
 
 **Features:**
-- Randomizes the order of verbs for variety
-- Toggle button next to mode switcher
+- Randomizes the order of cards/verbs for variety
+- Toggle button next to mode switcher and flip button
 - Visual indicator: animated pulse effect when active
 - Uses Fisher-Yates shuffling algorithm for true randomization
-- Resets verb rotation when toggled on
+- Resets card index when toggled on
 - Returns to original order when toggled off
+- Reshuffles automatically when reaching the end of the deck (if enabled)
 
 **UI:**
 - Button with shuffle icon
@@ -316,8 +317,8 @@ Users can create custom decks with the same three study modes:
 - Simple front/back card pairs stored in database
 - ProDeck mode reveals text progressively character-by-character (instead of by tense like the verb mode)
 - **Flip Direction** toggle to reverse learning direction (e.g., German → French instead of French → German)
+- **Shuffle Mode** toggle to randomize card order
 - Works seamlessly across all three study modes
-- Shuffle on deck load for variety
 
 ---
 
@@ -335,9 +336,12 @@ Users can create custom decks with the same three study modes:
 - **Yellow** (`yellow-500`): Session activity indicator
 
 ### Text Colors (Important for Visibility):
-- **Correct answers in typing mode**: `text-slate-900` (very dark) with `text-base` size
-- This ensures maximum readability for students reviewing incorrect answers
-- Previous color `text-slate-800` was too light
+- **All answer text**: `text-slate-900` (darkest slate) for maximum readability
+- **User input fields**: `text-slate-900` for typed answers
+- **Verb displays**: `text-slate-900` for infinitives, `text-slate-600` for English translations
+- **Pronoun prompts**: `text-slate-800` base, `text-slate-900` for emphasized text
+- **ProDeck conjugations**: `text-slate-900` for all conjugation values
+- Consistent dark text across all study modes ensures optimal readability
 
 ---
 

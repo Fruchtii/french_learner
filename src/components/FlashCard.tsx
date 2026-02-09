@@ -138,17 +138,17 @@ export default function FlashCard({
         <div className="p-6">
           {/* Verb Display */}
           <div className="text-center mb-5">
-            <h2 className="text-4xl font-bold text-slate-800 mb-2">
+            <h2 className="text-4xl font-bold text-slate-900 mb-2">
               {verb.infinitive}
             </h2>
-            <p className="text-slate-500 text-lg">{verb.english}</p>
+            <p className="text-slate-600 text-lg">{verb.english}</p>
           </div>
 
           {/* Pronoun Prompt */}
           <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-5 mb-5 border border-teal-100">
-            <p className="text-center text-xl text-slate-700">
-              <span className="text-slate-500">Conjugate for</span>{' '}
-              <span className="font-bold text-teal-600 text-2xl">
+            <p className="text-center text-xl text-slate-800">
+              <span className="text-slate-600">Conjugate for</span>{' '}
+              <span className="font-bold text-slate-900 text-2xl">
                 {pronouns[pronoun]}
               </span>
             </p>
