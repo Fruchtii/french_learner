@@ -138,12 +138,29 @@ Prioritizes cards that need more practice:
 
 **File:** `src/data/verbs.ts`
 
-### Current Verbs (5 total):
+### Current Verbs (100 total):
+The app includes 100 common French irregular verbs, including:
 1. **être** - to be
 2. **avoir** - to have
 3. **aller** - to go
 4. **faire** - to do/make
 5. **pouvoir** - to be able to/can
+6. **venir** - to come
+7. **voir** - to see
+8. **savoir** - to know
+9. **vouloir** - to want
+10. **devoir** - must/to have to
+11. **prendre** - to take
+12. **mettre** - to put
+13. **dire** - to say/tell
+14. **partir** - to leave
+15. **sortir** - to go out
+16. **tenir** - to hold
+17. **boire** - to drink
+18. **croire** - to believe
+19. **lire** - to read
+20. **écrire** - to write
+...and 80 more irregular verbs
 
 ### Tenses Covered (4 total):
 1. **Présent**
@@ -151,8 +168,8 @@ Prioritizes cards that need more practice:
 3. **Imparfait**
 4. **Futur Simple**
 
-### Total Cards: 120
-- 5 verbs × 4 tenses × 6 pronouns = 120 unique conjugation cards
+### Total Cards: 2400
+- 100 verbs × 4 tenses × 6 pronouns = 2400 unique conjugation cards
 
 ---
 
@@ -173,7 +190,7 @@ A featured card prominently displayed on the dashboard:
 **Content:**
 - Title: "French Verb Conjugation Practice"
 - Description: "Master French irregular verbs with 3 study modes"
-- Stats: "5 verbs • 4 tenses • 120 cards"
+- Stats: "100 verbs • 4 tenses • 2400 cards"
 - Links to: `/learn` page
 
 **Location:** Appears above user's custom decks in the dashboard

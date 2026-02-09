@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers } from 'lucide-react';
+import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers, Shuffle } from 'lucide-react';
 import { useStudyStore } from '@/store/useStudyStore';
 import TypingCard from './TypingCard';
 import FlashCard from './FlashCard';
@@ -33,9 +33,12 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     currentCard,
     sessionStats,
     userProgress,
+    shuffleEnabled,
     initializeCards,
     submitResult,
     selectNextCard,
+    selectNextVerbForProDeck,
+    toggleShuffle,
     getProgress,
   } = useStudyStore();
 
@@ -53,6 +56,15 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
   const handleGradeActions = useCallback((actions: GradeActions | null) => {
     gradeActionsRef.current = actions;
   }, []);
+
+  // Mode-aware next card function
+  const selectModeAppropriateCard = useCallback(() => {
+    if (mode === 'prodeck') {
+      selectNextVerbForProDeck();
+    } else {
+      selectNextCard();
+    }
+  }, [mode, selectNextCard, selectNextVerbForProDeck]);
 
   // Global keyboard handler - window-level for reliability
   useEffect(() => {
@@ -72,7 +84,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           primaryActionRef.current();
         } else if (readyForNext) {
           // Fallback: if ready for next, go to next card
-          selectNextCard();
+          selectModeAppropriateCard();
           setReadyForNext(false);
         }
       }
@@ -85,7 +97,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
         if (primaryActionRef.current) {
           primaryActionRef.current();
         } else if (readyForNext) {
-          selectNextCard();
+          selectModeAppropriateCard();
           setReadyForNext(false);
         }
       }
@@ -104,7 +116,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
       // ArrowRight as alternative next (when no grading active)
       if (e.key === 'ArrowRight' && !gradeActionsRef.current && readyForNext) {
         e.preventDefault();
-        selectNextCard();
+        selectModeAppropriateCard();
         setReadyForNext(false);
       }
     };
@@ -112,12 +124,20 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     // Attach to window for global keyboard handling
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [readyForNext, selectNextCard]);
+  }, [readyForNext, selectModeAppropriateCard]);
 
   // Initialize cards on mount
   useEffect(() => {
     initializeCards();
   }, [initializeCards]);
+
+  // When switching to ProDeck mode, select appropriate verb
+  useEffect(() => {
+    if (mode === 'prodeck' && currentCard) {
+      // Make sure we're showing a verb for ProDeck
+      selectNextVerbForProDeck();
+    }
+  }, [mode]); // Only run when mode changes
 
   // Reset actions when mode or card changes
   useEffect(() => {
@@ -147,12 +167,12 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
 
   // Handle skip (no result recorded)
   const handleSkip = () => {
-    selectNextCard();
+    selectModeAppropriateCard();
   };
 
   // Handle next card
   const handleNext = () => {
-    selectNextCard();
+    selectModeAppropriateCard();
   };
 
   // Loading state
@@ -166,8 +186,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Mode Switcher */}
-      <div className="flex justify-center mb-4">
+      {/* Mode Switcher and Shuffle Toggle */}
+      <div className="flex justify-center items-center gap-3 mb-4">
         <div className="inline-flex bg-slate-100 rounded-lg p-1">
           <button
             onClick={() => setMode('typing')}
@@ -203,6 +223,20 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
             ProDeck
           </button>
         </div>
+
+        {/* Shuffle Toggle */}
+        <button
+          onClick={toggleShuffle}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            shuffleEnabled
+              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
+              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
+          }`}
+          title={shuffleEnabled ? 'Shuffle: ON (random order)' : 'Shuffle: OFF (original order)'}
+        >
+          <Shuffle className={`w-4 h-4 ${shuffleEnabled ? 'animate-pulse' : ''}`} />
+          Shuffle
+        </button>
       </div>
 
       {/* Session Stats Bar */}

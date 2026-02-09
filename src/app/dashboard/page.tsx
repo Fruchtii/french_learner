@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-purple-100">
-                    <span className="font-semibold text-white">5 verbs</span> • <span className="font-semibold text-white">4 tenses</span> • <span className="font-semibold text-white">120 cards</span>
+                    <span className="font-semibold text-white">100 verbs</span> • <span className="font-semibold text-white">4 tenses</span> • <span className="font-semibold text-white">2400 cards</span>
                   </div>
                   <div className="flex items-center gap-1 text-white opacity-90 group-hover:opacity-100 transition-opacity">
                     <span className="text-sm font-medium">Start Learning</span>

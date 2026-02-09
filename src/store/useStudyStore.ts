@@ -49,6 +49,14 @@ interface StudyState {
   // Current card being studied
   currentCard: CurrentCard | null;
 
+  // Shuffle mode
+  shuffleEnabled: boolean;
+  shuffledVerbs: Verb[];
+
+  // ProDeck verb rotation (to ensure all verbs are shown)
+  proDeckVerbIndex: number;
+  proDeckVerbsShown: Set<string>;
+
   // Session statistics
   sessionStats: {
     cardsReviewed: number;
@@ -62,6 +70,9 @@ interface StudyState {
   submitResult: (verbId: string, tense: TenseKey, pronoun: PronounKey, isCorrect: boolean) => void;
   getNextCard: () => CurrentCard | null;
   selectNextCard: () => void;
+  selectNextVerbForProDeck: () => void;
+  toggleShuffle: () => void;
+  shuffleVerbs: () => void;
   resetSession: () => void;
   getProgress: () => { total: number; due: number; mastered: number; learning: number };
 
@@ -134,6 +145,10 @@ export const useStudyStore = create<StudyState>((set, get) => ({
   lastSyncError: null,
   userProgress: {},
   currentCard: null,
+  shuffleEnabled: false,
+  shuffledVerbs: [...verbs],
+  proDeckVerbIndex: 0,
+  proDeckVerbsShown: new Set<string>(),
   sessionStats: {
     cardsReviewed: 0,
     correctCount: 0,
@@ -267,6 +282,43 @@ export const useStudyStore = create<StudyState>((set, get) => ({
     set({ currentCard: nextCard });
   },
 
+  // Select next verb for ProDeck mode (cycles through all verbs)
+  selectNextVerbForProDeck: () => {
+    const { proDeckVerbIndex, proDeckVerbsShown, shuffleEnabled, shuffledVerbs } = get();
+
+    // Use shuffled or original verbs based on shuffle mode
+    const verbsToUse = shuffleEnabled ? shuffledVerbs : verbs;
+
+    // Get next verb in rotation
+    const nextVerb = verbsToUse[proDeckVerbIndex % verbsToUse.length];
+
+    // Create a card for this verb (use first tense/pronoun as placeholder)
+    const tenses: TenseKey[] = ['present', 'passeCompose', 'imparfait', 'futurSimple'];
+    const pronouns: PronounKey[] = ['je', 'tu', 'il', 'nous', 'vous', 'ils'];
+
+    const card: CurrentCard = {
+      verb: nextVerb,
+      tense: tenses[0], // Placeholder - ProDeck shows all tenses
+      pronoun: pronouns[0], // Placeholder - ProDeck shows all pronouns
+      cardId: getCardId(nextVerb.id, tenses[0], pronouns[0]),
+    };
+
+    // Update shown verbs set
+    const newShownVerbs = new Set(proDeckVerbsShown);
+    newShownVerbs.add(nextVerb.id);
+
+    // Reset if all verbs have been shown
+    if (newShownVerbs.size === verbsToUse.length) {
+      newShownVerbs.clear();
+    }
+
+    set({
+      currentCard: card,
+      proDeckVerbIndex: proDeckVerbIndex + 1,
+      proDeckVerbsShown: newShownVerbs,
+    });
+  },
+
   // Reset session statistics
   resetSession: () => {
     set({
@@ -290,6 +342,42 @@ export const useStudyStore = create<StudyState>((set, get) => ({
       mastered: cards.filter(c => c.box >= MAX_BOX).length,
       learning: cards.filter(c => c.box > 0 && c.box < MAX_BOX).length,
     };
+  },
+
+  // Shuffle the verbs array using Fisher-Yates algorithm
+  shuffleVerbs: () => {
+    const shuffled = [...verbs];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    set({
+      shuffledVerbs: shuffled,
+      proDeckVerbIndex: 0,
+      proDeckVerbsShown: new Set<string>()
+    });
+  },
+
+  // Toggle shuffle mode on/off
+  toggleShuffle: () => {
+    const { shuffleEnabled } = get();
+    const newShuffleState = !shuffleEnabled;
+
+    // If enabling shuffle, shuffle the verbs
+    if (newShuffleState) {
+      get().shuffleVerbs();
+    } else {
+      // If disabling, reset to original order
+      set({
+        shuffleEnabled: false,
+        shuffledVerbs: [...verbs],
+        proDeckVerbIndex: 0,
+        proDeckVerbsShown: new Set<string>()
+      });
+      return;
+    }
+
+    set({ shuffleEnabled: newShuffleState });
   },
 
   // Sync all progress to database
