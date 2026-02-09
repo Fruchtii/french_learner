@@ -159,10 +159,10 @@ export default function ProDeck({
         <div className="p-5">
           {/* Verb Display */}
           <div className="text-center mb-4">
-            <h2 className="text-4xl font-bold text-slate-800 mb-1">
+            <h2 className="text-4xl font-bold text-slate-900 mb-1">
               {verb.infinitive}
             </h2>
-            <p className="text-slate-500 text-lg">{verb.english}</p>
+            <p className="text-slate-600 text-lg">{verb.english}</p>
           </div>
 
           {/* Progress Indicator */}
@@ -225,7 +225,7 @@ export default function ProDeck({
                             className="flex justify-between items-center px-2 py-1.5 bg-white/80 rounded-md text-sm"
                           >
                             <span className={`${colors.text} font-medium text-xs`}>{label}</span>
-                            <span className="font-mono font-bold text-slate-800">{value}</span>
+                            <span className="font-mono font-bold text-slate-900">{value}</span>
                           </div>
                         ))}
                       </div>

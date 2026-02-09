@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Check, X, Loader2, RotateCcw, ChevronRight, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight } from 'lucide-react';
+import { Check, X, Loader2, RotateCcw, ChevronRight, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle } from 'lucide-react';
 import { getSupabase, type Card } from '@/lib/supabase';
 
 export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
@@ -17,6 +17,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<StudyMode>('typing');
   const [isFlipped, setIsFlipped] = useState(false);
+  const [shuffleEnabled, setShuffleEnabled] = useState(false);
+  const [originalCards, setOriginalCards] = useState<Card[]>([]);
 
   // Typing mode state
   const [userInput, setUserInput] = useState('');
@@ -55,9 +57,9 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
           return;
         }
 
-        // Shuffle cards for variety
-        const shuffled = [...data].sort(() => Math.random() - 0.5);
-        setCards(shuffled);
+        // Store original order
+        setOriginalCards(data);
+        setCards(data);
         setLoading(false);
       } catch (err) {
         console.error('Error loading cards:', err);
@@ -74,6 +76,31 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   // Helper functions to get question/answer based on flip state
   const getQuestion = () => isFlipped ? currentCard?.back : currentCard?.front;
   const getAnswer = () => isFlipped ? currentCard?.front : currentCard?.back;
+
+  // Shuffle function using Fisher-Yates algorithm
+  const shuffleCards = () => {
+    const shuffled = [...originalCards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setCards(shuffled);
+    setCurrentIndex(0);
+  };
+
+  // Toggle shuffle mode
+  const toggleShuffle = () => {
+    const newShuffleState = !shuffleEnabled;
+    setShuffleEnabled(newShuffleState);
+
+    if (newShuffleState) {
+      shuffleCards();
+    } else {
+      // Return to original order
+      setCards([...originalCards]);
+      setCurrentIndex(0);
+    }
+  };
 
   // Reset state when changing modes or cards
   useEffect(() => {
@@ -167,8 +194,10 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     } else {
       // Restart from beginning
       setCurrentIndex(0);
-      // Reshuffle cards
-      setCards(prev => [...prev].sort(() => Math.random() - 0.5));
+      // Reshuffle if shuffle is enabled
+      if (shuffleEnabled) {
+        shuffleCards();
+      }
     }
   };
 
@@ -180,7 +209,11 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     setRevealLevel(0);
     setIsGrading(false);
     setSessionStats({ correct: 0, incorrect: 0, total: 0 });
-    setCards(prev => [...prev].sort(() => Math.random() - 0.5));
+
+    // Reshuffle if shuffle is enabled
+    if (shuffleEnabled) {
+      shuffleCards();
+    }
   };
 
   // Loading state
@@ -275,6 +308,20 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
           <ArrowLeftRight className={`w-4 h-4 ${isFlipped ? 'rotate-90' : ''}`} />
           Flip
         </button>
+
+        {/* Shuffle Toggle */}
+        <button
+          onClick={toggleShuffle}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            shuffleEnabled
+              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
+              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
+          }`}
+          title={shuffleEnabled ? 'Shuffle: ON (random order)' : 'Shuffle: OFF (original order)'}
+        >
+          <Shuffle className={`w-4 h-4 ${shuffleEnabled ? 'animate-pulse' : ''}`} />
+          Shuffle
+        </button>
       </div>
 
       {/* Session Stats */}
@@ -322,7 +369,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     }
                   }}
                   placeholder="Type your answer..."
-                  className="w-full px-4 py-3 text-lg border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-medium"
+                  className="w-full px-4 py-3 text-lg text-slate-900 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-medium"
                 />
                 <button
                   onClick={handleTypingSubmit}
@@ -390,7 +437,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-3">
                 Answer
               </p>
-              <h2 className="text-2xl font-bold text-green-900 mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">
                 {getAnswer()}
               </h2>
               <div className="flex gap-3">
@@ -442,7 +489,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2 text-center">
                 Progressive Reveal
               </p>
-              <p className="text-2xl font-bold text-purple-900 text-center font-mono tracking-wider">
+              <p className="text-2xl font-bold text-slate-900 text-center font-mono tracking-wider">
                 {revealLevel > 0 ? getRevealedText(getAnswer(), revealLevel) : '???'}
               </p>
             </div>

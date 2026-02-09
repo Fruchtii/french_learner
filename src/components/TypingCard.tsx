@@ -157,17 +157,17 @@ export default function TypingCard({
       <div className="p-5">
         {/* Verb Display */}
         <div className="text-center mb-4">
-          <h2 className="text-3xl font-bold text-slate-800 mb-1">
+          <h2 className="text-3xl font-bold text-slate-900 mb-1">
             {verb.infinitive}
           </h2>
-          <p className="text-slate-500">{verb.english}</p>
+          <p className="text-slate-600">{verb.english}</p>
         </div>
 
         {/* Pronoun Prompt */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
-          <p className="text-center text-lg text-slate-700">
+          <p className="text-center text-lg text-slate-800">
             Conjugate for:{' '}
-            <span className="font-bold text-blue-600 text-xl">
+            <span className="font-bold text-slate-900 text-xl">
               {pronouns[pronoun]}
             </span>
           </p>
@@ -205,13 +205,13 @@ export default function TypingCard({
               transition-all duration-200 outline-none
               ${isShaking ? 'animate-shake' : ''}
               ${quizState === 'answering'
-                ? 'bg-gray-50 text-gray-900 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-400'
+                ? 'bg-gray-50 text-slate-900 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-400'
                 : ''}
               ${quizState === 'correct'
-                ? 'border-green-500 bg-green-50 text-green-700'
+                ? 'border-green-500 bg-green-50 text-slate-900'
                 : ''}
               ${quizState === 'incorrect'
-                ? 'border-red-500 bg-red-50 text-red-700'
+                ? 'border-red-500 bg-red-50 text-slate-900'
                 : ''}
               disabled:cursor-not-allowed
             `}

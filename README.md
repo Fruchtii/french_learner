@@ -13,7 +13,7 @@ A Next.js flashcard application for learning French with spaced repetition, mult
 - **100 French Irregular Verbs**: Master conjugations across 4 tenses (Présent, Passé Composé, Imparfait, Futur Simple)
 - **Custom Vocabulary Decks**: Create and study your own flashcard decks
 - **Spaced Repetition**: Leitner box system for optimal review scheduling
-- **Shuffle Mode**: Randomize verb order for variety (verb conjugation practice)
+- **Shuffle Mode**: Randomize card order for variety (available in both verb practice and custom decks)
 - **Flip Direction**: Reverse learning direction for vocabulary decks (e.g., German → French instead of French → German)
 
 ### Technical Stack
@@ -118,7 +118,7 @@ See `supabase-schema.sql` for full schema details.
 - Same 3 study modes as verb practice
 
 ### Study Controls
-- **Shuffle**: Randomize verb order (available in verb practice)
+- **Shuffle**: Randomize card/verb order (available in both verb practice and custom decks)
 - **Flip Direction**: Reverse question/answer languages (available in custom decks)
 - Both controls are toggle buttons next to the mode switcher
 
