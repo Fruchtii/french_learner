@@ -91,6 +91,50 @@ A flashcard application for learning French verb conjugations with three interac
 
 ---
 
+## Study Controls
+
+### Shuffle Mode
+**Available in:** Verb Conjugation Practice (`/learn`)
+**Component:** `src/components/StudySession.tsx`
+
+**Features:**
+- Randomizes the order of verbs for variety
+- Toggle button next to mode switcher
+- Visual indicator: animated pulse effect when active
+- Uses Fisher-Yates shuffling algorithm for true randomization
+- Resets verb rotation when toggled on
+- Returns to original order when toggled off
+
+**UI:**
+- Button with shuffle icon
+- Active state: indigo background with border (`bg-indigo-100 text-indigo-700 border-indigo-300`)
+- Inactive state: slate background (`bg-slate-100 text-slate-600`)
+
+### Flip Direction
+**Available in:** Custom Deck Study (`/learn/[id]`)
+**Component:** `src/components/DeckStudySession.tsx`
+
+**Features:**
+- Reverses the learning direction for vocabulary cards
+- Swaps which language is shown as the question vs. answer
+- Example: Normal (French → German), Flipped (German → French)
+- Works across all three study modes (Typing, Flashcard, ProDeck)
+- Toggle button next to mode switcher
+- Visual indicator: rotated icon when active
+
+**UI:**
+- Button with arrow left-right icon
+- Active state: indigo background with border (`bg-indigo-100 text-indigo-700 border-indigo-300`)
+- Inactive state: slate background (`bg-slate-100 text-slate-600`)
+- Icon rotates 90 degrees when flipped
+
+**Implementation:**
+- Uses `isFlipped` state boolean
+- Helper functions: `getQuestion()` and `getAnswer()` swap front/back based on flip state
+- All card displays use these helpers to respect the flip setting
+
+---
+
 ## Answer Validation
 
 **File:** `src/lib/validation.ts`
@@ -268,8 +312,12 @@ Users can create custom decks with the same three study modes:
 - Flashcard
 - ProDeck
 
-Custom decks use simple front/back cards from the database.
-ProDeck mode for custom decks reveals text progressively character-by-character (instead of by tense like the verb mode).
+### Features:
+- Simple front/back card pairs stored in database
+- ProDeck mode reveals text progressively character-by-character (instead of by tense like the verb mode)
+- **Flip Direction** toggle to reverse learning direction (e.g., German → French instead of French → German)
+- Works seamlessly across all three study modes
+- Shuffle on deck load for variety
 
 ---
 
@@ -385,5 +433,5 @@ Uses Supabase Auth with the following:
 
 ---
 
-**Last Updated:** 2026-01-28
-**Version:** 1.0
+**Last Updated:** 2026-02-09
+**Version:** 1.1
