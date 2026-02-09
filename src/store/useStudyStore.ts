@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { verbs, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 import { getSupabase, type LegacyStudyProgress } from '@/lib/supabase';
 
@@ -138,7 +139,9 @@ function fromDbFormat(dbCard: LegacyStudyProgress): CardProgress {
   };
 }
 
-export const useStudyStore = create<StudyState>((set, get) => ({
+export const useStudyStore = create<StudyState>()(
+  persist(
+    (set, get) => ({
   userId: null,
   isLoggedIn: false,
   isSyncing: false,
@@ -501,4 +504,13 @@ export const useStudyStore = create<StudyState>((set, get) => ({
       // Don't set error state for single card sync failures
     }
   },
-}));
+}),
+    {
+      name: 'vokab-verb-progress',
+      partialize: (state) => ({
+        userProgress: state.userProgress,
+        sessionStats: state.sessionStats,
+      }),
+    },
+  ),
+);

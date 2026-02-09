@@ -167,7 +167,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       const { userId } = get();
       if (userId) {
         try {
-          const cardIds = cards.map(c => c.id);
+          const cardIds = cards.map((c: Card) => c.id);
           const { data: dbProgress, error: dbError } = await supabase
             .from('study_progress')
             .select('*')
@@ -269,8 +269,8 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
         }, {
           onConflict: 'user_id,card_id',
         })
-        .then(({ error }) => {
-          if (error) console.error('Deck card sync error:', error);
+        .then(({ error: syncErr }: { error: unknown }) => {
+          if (syncErr) console.error('Deck card sync error:', syncErr);
         });
     }
   },
@@ -304,6 +304,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       sessionStats: {
         correct: sessionStats.correct + 1,
         incorrect: Math.max(0, sessionStats.incorrect - 1),
+        total: sessionStats.total,
       },
     });
 
@@ -325,8 +326,8 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
         }, {
           onConflict: 'user_id,card_id',
         })
-        .then(({ error }) => {
-          if (error) console.error('Deck card sync error:', error);
+        .then(({ error: syncErr }: { error: unknown }) => {
+          if (syncErr) console.error('Deck card sync error:', syncErr);
         });
     }
   },

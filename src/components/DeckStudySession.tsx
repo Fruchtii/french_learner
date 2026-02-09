@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { Check, X, Loader2, RotateCcw, ChevronRight, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle } from 'lucide-react';
-import { getSupabase, type Card } from '@/lib/supabase';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, Undo2, Eye } from 'lucide-react';
+import { useDeckStudyStore } from '@/store/useDeckStudyStore';
+import { getSupabase } from '@/lib/supabase';
 
 export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
 
@@ -10,158 +11,185 @@ interface DeckStudySessionProps {
   deckId: string;
 }
 
+const accentChars = ['é', 'è', 'ê', 'à', 'â', 'ù', 'û', 'ç', 'ô', 'î', 'ï', 'œ'];
+
 export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
-  const [cards, setCards] = useState<Card[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<StudyMode>('typing');
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [shuffleEnabled, setShuffleEnabled] = useState(false);
-  const [originalCards, setOriginalCards] = useState<Card[]>([]);
 
   // Typing mode state
   const [userInput, setUserInput] = useState('');
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [wasOverridden, setWasOverridden] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Flashcard mode state
   const [showAnswer, setShowAnswer] = useState(false);
+  const [hasGraded, setHasGraded] = useState(false);
 
   // ProDeck mode state
   const [revealLevel, setRevealLevel] = useState(0);
   const [isGrading, setIsGrading] = useState(false);
 
-  const [sessionStats, setSessionStats] = useState({
-    correct: 0,
-    incorrect: 0,
-    total: 0,
-  });
+  // Store
+  const {
+    currentCard,
+    loading,
+    error,
+    sessionStats,
+    shuffleEnabled,
+    isFlipped,
+    loadDeck,
+    setUser,
+    submitResult,
+    overrideResult,
+    selectNextCard,
+    toggleShuffle,
+    toggleFlip,
+    restart,
+    getProgress,
+    getBoxLevel,
+  } = useDeckStudyStore();
 
-  // Load cards from database
+  // Load deck and check auth on mount
   useEffect(() => {
-    async function loadCards() {
-      try {
-        const supabase = getSupabase();
-        const { data, error: fetchError } = await supabase
-          .from('cards')
-          .select('*')
-          .eq('deck_id', deckId)
-          .order('order_index');
-
-        if (fetchError) throw fetchError;
-
-        if (!data || data.length === 0) {
-          setError('This deck has no cards yet.');
-          setLoading(false);
-          return;
-        }
-
-        // Store original order
-        setOriginalCards(data);
-        setCards(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error loading cards:', err);
-        setError('Failed to load cards. Please try again.');
-        setLoading(false);
+    async function init() {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user.id);
       }
+      loadDeck(deckId);
     }
+    init();
+  }, [deckId, loadDeck, setUser]);
 
-    loadCards();
-  }, [deckId]);
+  const boxLevel = currentCard ? getBoxLevel(currentCard.id) : 0;
+  const progress = getProgress();
 
-  const currentCard = cards[currentIndex];
+  // Helper functions for question/answer based on flip state
+  const getQuestion = useCallback(() => {
+    if (!currentCard) return '';
+    return isFlipped ? currentCard.back : currentCard.front;
+  }, [currentCard, isFlipped]);
 
-  // Helper functions to get question/answer based on flip state
-  const getQuestion = () => isFlipped ? currentCard?.back : currentCard?.front;
-  const getAnswer = () => isFlipped ? currentCard?.front : currentCard?.back;
+  const getAnswer = useCallback(() => {
+    if (!currentCard) return '';
+    return isFlipped ? currentCard.front : currentCard.back;
+  }, [currentCard, isFlipped]);
 
-  // Shuffle function using Fisher-Yates algorithm
-  const shuffleCards = () => {
-    const shuffled = [...originalCards];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    setCards(shuffled);
-    setCurrentIndex(0);
-  };
-
-  // Toggle shuffle mode
-  const toggleShuffle = () => {
-    const newShuffleState = !shuffleEnabled;
-    setShuffleEnabled(newShuffleState);
-
-    if (newShuffleState) {
-      shuffleCards();
-    } else {
-      // Return to original order
-      setCards([...originalCards]);
-      setCurrentIndex(0);
-    }
-  };
-
-  // Reset state when changing modes or cards
+  // Reset local UI state when card or mode changes
   useEffect(() => {
     setUserInput('');
     setIsCorrect(null);
+    setWasOverridden(false);
+    setIsShaking(false);
     setShowAnswer(false);
+    setHasGraded(false);
     setRevealLevel(0);
     setIsGrading(false);
 
-    // Focus input in typing mode
     if (mode === 'typing') {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [mode, currentIndex]);
+  }, [mode, currentCard?.id]);
 
-  // === TYPING MODE FUNCTIONS ===
+  // Global keyboard handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when user is typing in an input
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) {
+        return;
+      }
+
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+
+        if (mode === 'typing' && isCorrect !== null) {
+          goToNextCard();
+        } else if (mode === 'flashcard') {
+          if (!showAnswer) setShowAnswer(true);
+          else if (hasGraded) goToNextCard();
+        } else if (mode === 'prodeck') {
+          if (!isGrading) handleProDeckReveal();
+          else if (isGrading && hasGraded) goToNextCard();
+        }
+      }
+
+      // Grading shortcuts (1/← = incorrect, 2/→ = correct)
+      if (mode === 'flashcard' && showAnswer && !hasGraded) {
+        if (e.key === '1' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handleFlashcardGrade(false);
+        } else if (e.key === '2' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleFlashcardGrade(true);
+        }
+      }
+
+      if (mode === 'prodeck' && isGrading && !hasGraded) {
+        if (e.key === '1' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handleProDeckGrade(false);
+        } else if (e.key === '2' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleProDeckGrade(true);
+        }
+      }
+
+      // ArrowRight for next when done
+      if (e.key === 'ArrowRight' && !isGrading) {
+        if (mode === 'typing' && isCorrect !== null) {
+          e.preventDefault();
+          goToNextCard();
+        } else if (mode === 'flashcard' && hasGraded) {
+          e.preventDefault();
+          goToNextCard();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, isCorrect, showAnswer, hasGraded, isGrading, revealLevel]);
+
+  // === TYPING MODE ===
   const handleTypingSubmit = () => {
     if (!userInput.trim() || !currentCard) return;
 
     const correct = userInput.trim().toLowerCase() === getAnswer().trim().toLowerCase();
     setIsCorrect(correct);
+    submitResult(currentCard.id, correct);
 
-    setSessionStats(prev => ({
-      ...prev,
-      correct: prev.correct + (correct ? 1 : 0),
-      incorrect: prev.incorrect + (correct ? 0 : 1),
-      total: prev.total + 1,
-    }));
-  };
-
-  const handleTypingNext = () => {
-    goToNextCard();
+    if (!correct) {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+    }
   };
 
   const handleTypingOverride = () => {
+    if (!currentCard) return;
+    overrideResult(currentCard.id);
     setIsCorrect(true);
-    setSessionStats(prev => ({
-      ...prev,
-      correct: prev.correct + 1,
-      incorrect: prev.incorrect - 1,
-    }));
+    setWasOverridden(true);
   };
 
-  // === FLASHCARD MODE FUNCTIONS ===
-  const handleFlashcardFlip = () => {
-    setShowAnswer(true);
+  const handleAccentClick = (char: string) => {
+    setUserInput(prev => prev + char);
+    inputRef.current?.focus();
   };
 
+  // === FLASHCARD MODE ===
   const handleFlashcardGrade = (correct: boolean) => {
-    setSessionStats(prev => ({
-      ...prev,
-      correct: prev.correct + (correct ? 1 : 0),
-      incorrect: prev.incorrect + (correct ? 0 : 1),
-      total: prev.total + 1,
-    }));
-    goToNextCard();
+    if (!currentCard) return;
+    submitResult(currentCard.id, correct);
+    setHasGraded(true);
   };
 
-  // === PRODECK MODE FUNCTIONS ===
+  // === PRODECK MODE ===
   const handleProDeckReveal = () => {
-    const answer = getAnswer() || '';
+    const answer = getAnswer();
     const maxLevel = Math.ceil(answer.length / 3);
 
     if (revealLevel < maxLevel) {
@@ -172,48 +200,24 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   };
 
   const handleProDeckGrade = (correct: boolean) => {
-    setSessionStats(prev => ({
-      ...prev,
-      correct: prev.correct + (correct ? 1 : 0),
-      incorrect: prev.incorrect + (correct ? 0 : 1),
-      total: prev.total + 1,
-    }));
-    goToNextCard();
+    if (!currentCard) return;
+    submitResult(currentCard.id, correct);
+    setHasGraded(true);
   };
 
-  // === SHARED FUNCTIONS ===
-  const goToNextCard = () => {
-    setUserInput('');
-    setIsCorrect(null);
-    setShowAnswer(false);
-    setRevealLevel(0);
-    setIsGrading(false);
+  const getRevealedText = (text: string, level: number) => {
+    const charsPerLevel = Math.ceil(text.length / 3);
+    const charsToShow = Math.min(level * charsPerLevel, text.length);
+    return text.substring(0, charsToShow);
+  };
 
-    if (currentIndex < cards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      // Restart from beginning
-      setCurrentIndex(0);
-      // Reshuffle if shuffle is enabled
-      if (shuffleEnabled) {
-        shuffleCards();
-      }
-    }
+  // === SHARED ===
+  const goToNextCard = () => {
+    selectNextCard();
   };
 
   const handleRestart = () => {
-    setCurrentIndex(0);
-    setUserInput('');
-    setIsCorrect(null);
-    setShowAnswer(false);
-    setRevealLevel(0);
-    setIsGrading(false);
-    setSessionStats({ correct: 0, incorrect: 0, total: 0 });
-
-    // Reshuffle if shuffle is enabled
-    if (shuffleEnabled) {
-      shuffleCards();
-    }
+    restart();
   };
 
   // Loading state
@@ -232,7 +236,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   if (error || !currentCard) {
     return (
       <div className="w-full max-w-lg mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+        <div className="vk-card shadow-slate-200/50 border-slate-200 p-8 text-center">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-slate-400" />
           </div>
@@ -247,17 +251,9 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     );
   }
 
-  // Helper function for ProDeck progressive reveal
-  const getRevealedText = (text: string, level: number) => {
-    const charsPerLevel = Math.ceil(text.length / 3);
-    const charsToShow = Math.min(level * charsPerLevel, text.length);
-    return text.substring(0, charsToShow);
-  };
-
-  // Study session UI
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Mode Switcher and Flip Toggle */}
+      {/* Mode Switcher, Flip, and Shuffle */}
       <div className="flex justify-center items-center gap-3 mb-4">
         <div className="inline-flex bg-slate-100 rounded-lg p-1">
           <button
@@ -297,12 +293,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
         {/* Flip Direction Toggle */}
         <button
-          onClick={() => setIsFlipped(!isFlipped)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            isFlipped
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
-              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
-          }`}
+          onClick={toggleFlip}
+          className={`vk-toggle ${isFlipped ? 'vk-toggle-active' : 'vk-toggle-inactive'}`}
           title={isFlipped ? 'Direction: Reversed' : 'Direction: Normal'}
         >
           <ArrowLeftRight className={`w-4 h-4 ${isFlipped ? 'rotate-90' : ''}`} />
@@ -312,12 +304,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
         {/* Shuffle Toggle */}
         <button
           onClick={toggleShuffle}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            shuffleEnabled
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
-              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
-          }`}
-          title={shuffleEnabled ? 'Shuffle: ON (random order)' : 'Shuffle: OFF (original order)'}
+          className={`vk-toggle ${shuffleEnabled ? 'vk-toggle-active' : 'vk-toggle-inactive'}`}
+          title={shuffleEnabled ? 'Shuffle: ON' : 'Shuffle: OFF'}
         >
           <Shuffle className={`w-4 h-4 ${shuffleEnabled ? 'animate-pulse' : ''}`} />
           Shuffle
@@ -347,34 +335,77 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
       {/* TYPING MODE */}
       {mode === 'typing' && (
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="p-6">
-            <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2 text-center">
-              Question
-            </p>
-            <h2 className="text-2xl font-bold text-slate-900 text-center mb-6">
-              {getQuestion()}
-            </h2>
+        <div className="vk-card shadow-blue-200/50 border-blue-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+            <div className="flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                <Keyboard className="w-4 h-4 text-blue-200" />
+                <span className="text-blue-100 text-sm font-medium">Typing</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
+                  <Trophy className="w-3 h-3" />
+                  <span className="text-xs font-medium">Box {boxLevel}</span>
+                </div>
+                <button
+                  onClick={goToNextCard}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Skip card"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {/* Question */}
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                {getQuestion()}
+              </h2>
+            </div>
+
+            {/* Accent Bar */}
+            <div className="flex flex-wrap justify-center gap-1.5 mb-3">
+              {accentChars.map((char) => (
+                <button
+                  key={char}
+                  onClick={() => handleAccentClick(char)}
+                  disabled={isCorrect !== null}
+                  className="w-9 h-9 bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-base font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {char}
+                </button>
+              ))}
+            </div>
 
             {isCorrect === null ? (
               <>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && userInput.trim()) {
-                      handleTypingSubmit();
-                    }
-                  }}
-                  placeholder="Type your answer..."
-                  className="w-full px-4 py-3 text-lg text-slate-900 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-medium"
-                />
+                {/* Input */}
+                <div className="relative mb-4">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && userInput.trim()) {
+                        handleTypingSubmit();
+                      }
+                    }}
+                    placeholder="Type your answer..."
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    className="vk-input"
+                  />
+                </div>
                 <button
                   onClick={handleTypingSubmit}
                   disabled={!userInput.trim()}
-                  className="w-full mt-3 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="vk-btn-primary"
                 >
                   Check Answer
                 </button>
@@ -384,13 +415,19 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 <div className="flex items-center justify-center gap-2 mb-4">
                   {isCorrect ? (
                     <>
-                      <Check className="w-6 h-6 text-green-600" />
-                      <span className="text-lg font-semibold text-green-900">Correct!</span>
+                      <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span className="text-lg font-semibold text-green-900">
+                        {wasOverridden ? 'Overridden!' : `Correct! Box ${Math.min(boxLevel, 3)}`}
+                      </span>
                     </>
                   ) : (
                     <>
-                      <X className="w-6 h-6 text-red-600" />
-                      <span className="text-lg font-semibold text-red-900">Incorrect</span>
+                      <div className="w-7 h-7 bg-red-100 rounded-full flex items-center justify-center">
+                        <X className="w-4 h-4 text-red-600" />
+                      </div>
+                      <span className="text-lg font-semibold text-red-900">Not quite! Back to Box 0</span>
                     </>
                   )}
                 </div>
@@ -402,73 +439,136 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   {!isCorrect && (
                     <button
                       onClick={handleTypingOverride}
-                      className="flex-1 py-2 px-4 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-200 transition-colors"
+                      className="flex-1 py-3 bg-amber-100 text-amber-700 rounded-xl font-semibold hover:bg-amber-200 transition-colors flex items-center justify-center gap-2"
                     >
+                      <Undo2 className="w-4 h-4" />
                       I was right
                     </button>
                   )}
                   <button
-                    onClick={handleTypingNext}
-                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    onClick={goToNextCard}
+                    className={`${!isCorrect ? 'flex-1' : 'w-full'} py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2`}
                   >
                     Next Card
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Keyboard hint */}
+          <div className="px-5 pb-4">
+            <p className="text-center text-slate-400 text-xs">
+              {isCorrect === null
+                ? 'Press Enter to check answer'
+                : 'Press Space or Enter to continue'}
+            </p>
           </div>
         </div>
       )}
 
       {/* FLASHCARD MODE */}
       {mode === 'flashcard' && (
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="p-8 text-center bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-slate-200">
-            <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-3">
-              Question
-            </p>
-            <h2 className="text-2xl font-bold text-slate-900">
-              {getQuestion()}
-            </h2>
-          </div>
-
-          {showAnswer ? (
-            <div className="p-8 text-center bg-gradient-to-br from-green-50 to-emerald-50">
-              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-3">
-                Answer
-              </p>
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">
-                {getAnswer()}
-              </h2>
-              <div className="flex gap-3">
+        <div
+          className={`vk-card transition-all duration-300 ${
+            !showAnswer ? 'shadow-teal-200/50 border-teal-200 cursor-pointer hover:shadow-teal-300/50' : 'shadow-slate-200/50 border-slate-200'
+          }`}
+          onClick={!showAnswer ? () => setShowAnswer(true) : undefined}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3">
+            <div className="flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-teal-100" />
+                <span className="text-teal-100 text-sm font-medium">Flashcard</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
+                  <Trophy className="w-3 h-3" />
+                  <span className="text-xs font-medium">Box {boxLevel}</span>
+                </div>
                 <button
-                  onClick={() => handleFlashcardGrade(false)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); goToNextCard(); }}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Skip card"
                 >
-                  <X className="w-5 h-5" />
-                  Incorrect
-                </button>
-                <button
-                  onClick={() => handleFlashcardGrade(true)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                >
-                  <Check className="w-5 h-5" />
-                  Correct
+                  <RotateCcw className="w-4 h-4" />
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="p-8 text-center">
-              <div className="h-32 flex items-center justify-center">
-                <p className="text-slate-400 text-sm">Think about the answer...</p>
+          </div>
+
+          <div className="p-6">
+            {/* Question */}
+            <div className="text-center mb-5">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                {getQuestion()}
+              </h2>
+            </div>
+
+            {/* Hidden state */}
+            {!showAnswer && (
+              <div className="animate-fadeIn">
+                <button
+                  onClick={() => setShowAnswer(true)}
+                  className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
+                >
+                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center group-hover:bg-teal-200 transition-colors">
+                    <Eye className="w-6 h-6 text-teal-600" />
+                  </div>
+                  <span className="text-slate-600 font-medium">Tap to reveal</span>
+                  <span className="text-slate-400 text-sm">or press Space</span>
+                </button>
               </div>
-              <button
-                onClick={handleFlashcardFlip}
-                className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Show Answer
-                <ChevronRight className="w-5 h-5" />
-              </button>
+            )}
+
+            {/* Revealed answer */}
+            {showAnswer && (
+              <div className="animate-fadeIn">
+                <div className="w-full py-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl mb-5">
+                  <p className="text-center text-3xl font-mono font-bold text-white">
+                    {getAnswer()}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Grading section */}
+          {showAnswer && (
+            <div className="px-6 pb-6">
+              {!hasGraded ? (
+                <div className="animate-fadeIn">
+                  <p className="text-center text-slate-500 text-sm mb-3">Did you know the answer?</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleFlashcardGrade(false)}
+                      className="vk-btn-grade-incorrect"
+                    >
+                      <X className="w-5 h-5" />
+                      I forgot
+                    </button>
+                    <button
+                      onClick={() => handleFlashcardGrade(true)}
+                      className="vk-btn-grade-correct"
+                    >
+                      <Check className="w-5 h-5" />
+                      I knew it
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="animate-fadeIn">
+                  <button
+                    onClick={goToNextCard}
+                    className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    Next Card
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -476,7 +576,30 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
       {/* PRODECK MODE */}
       {mode === 'prodeck' && (
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="vk-card shadow-purple-200/50 border-purple-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
+            <div className="flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-200" />
+                <span className="text-purple-100 text-sm font-medium">ProDeck</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
+                  <Trophy className="w-3 h-3" />
+                  <span className="text-xs font-medium">Box {boxLevel}</span>
+                </div>
+                <button
+                  onClick={goToNextCard}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Skip card"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="p-8">
             <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2 text-center">
               Question
@@ -497,41 +620,76 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
             {!isGrading ? (
               <button
                 onClick={handleProDeckReveal}
-                className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
               >
                 {revealLevel === 0 ? 'Start Revealing' : 'Reveal More'}
               </button>
-            ) : (
+            ) : !hasGraded ? (
               <div>
                 <p className="text-center text-sm text-slate-600 mb-3">Did you get it right?</p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleProDeckGrade(false)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
+                    className="vk-btn-grade-incorrect"
                   >
                     <X className="w-5 h-5" />
                     Incorrect
                   </button>
                   <button
                     onClick={() => handleProDeckGrade(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    className="vk-btn-grade-correct"
                   >
                     <Check className="w-5 h-5" />
                     Correct
                   </button>
                 </div>
               </div>
+            ) : (
+              <div className="animate-fadeIn">
+                <button
+                  onClick={goToNextCard}
+                  className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  Next Card
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Card Progress Indicator */}
-      <div className="mt-4 text-center text-sm text-slate-500">
-        <p>
-          Card {currentIndex + 1} of {cards.length}
-        </p>
+      {/* Progress Overview */}
+      <div className="mt-4 bg-white rounded-xl p-3 shadow-sm border border-slate-200">
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span className="text-slate-600">
+              <span className="font-semibold text-blue-600">{progress.due}</span> due
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-slate-600">
+              <span className="font-semibold text-amber-600">{progress.learning}</span> learning
+            </span>
+            <span className="text-slate-600">
+              <span className="font-semibold text-green-600">{progress.mastered}</span> mastered
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Keyboard hints */}
+      <p className="text-center text-slate-400 text-xs mt-3">
+        {mode === 'typing' && isCorrect === null && 'Press Enter to check answer'}
+        {mode === 'typing' && isCorrect !== null && 'Press Space or Enter to continue'}
+        {mode === 'flashcard' && !showAnswer && 'Press Space to reveal'}
+        {mode === 'flashcard' && showAnswer && !hasGraded && '1 or \u2190 = forgot \u2022 2 or \u2192 = knew it'}
+        {mode === 'flashcard' && hasGraded && 'Press Space or Enter for next card'}
+        {mode === 'prodeck' && !isGrading && (revealLevel === 0 ? 'Press Space to start revealing' : 'Press Space to reveal more')}
+        {mode === 'prodeck' && isGrading && !hasGraded && '1 or \u2190 = incorrect \u2022 2 or \u2192 = correct'}
+        {mode === 'prodeck' && hasGraded && 'Press Space or Enter for next card'}
+      </p>
 
       {/* Restart Button */}
       {sessionStats.total > 0 && (
