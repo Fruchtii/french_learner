@@ -200,21 +200,7 @@ export default function TypingCard({
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
-            className={`
-              w-full px-5 py-3 text-lg text-center font-mono rounded-xl border-2
-              transition-all duration-200 outline-none
-              ${isShaking ? 'animate-shake' : ''}
-              ${quizState === 'answering'
-                ? 'bg-gray-50 text-slate-900 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-400'
-                : ''}
-              ${quizState === 'correct'
-                ? 'border-green-500 bg-green-50 text-slate-900'
-                : ''}
-              ${quizState === 'incorrect'
-                ? 'border-red-500 bg-red-50 text-slate-900'
-                : ''}
-              disabled:cursor-not-allowed
-            `}
+            className={`vk-input ${isShaking ? 'animate-shake' : ''} ${quizState === 'correct' ? 'vk-input-correct' : ''} ${quizState === 'incorrect' ? 'vk-input-incorrect' : ''}`}
           />
         </div>
 
