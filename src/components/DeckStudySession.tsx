@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Check, X, Loader2, RotateCcw, ChevronRight, Keyboard, Layers, Sparkles, Zap } from 'lucide-react';
+import { Check, X, Loader2, RotateCcw, ChevronRight, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight } from 'lucide-react';
 import { getSupabase, type Card } from '@/lib/supabase';
 
 export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
@@ -16,6 +16,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<StudyMode>('typing');
+  const [isFlipped, setIsFlipped] = useState(false);
 
   // Typing mode state
   const [userInput, setUserInput] = useState('');
@@ -70,6 +71,10 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
   const currentCard = cards[currentIndex];
 
+  // Helper functions to get question/answer based on flip state
+  const getQuestion = () => isFlipped ? currentCard?.back : currentCard?.front;
+  const getAnswer = () => isFlipped ? currentCard?.front : currentCard?.back;
+
   // Reset state when changing modes or cards
   useEffect(() => {
     setUserInput('');
@@ -88,7 +93,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   const handleTypingSubmit = () => {
     if (!userInput.trim() || !currentCard) return;
 
-    const correct = userInput.trim().toLowerCase() === currentCard.back.trim().toLowerCase();
+    const correct = userInput.trim().toLowerCase() === getAnswer().trim().toLowerCase();
     setIsCorrect(correct);
 
     setSessionStats(prev => ({
@@ -129,7 +134,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
   // === PRODECK MODE FUNCTIONS ===
   const handleProDeckReveal = () => {
-    const answer = currentCard?.back || '';
+    const answer = getAnswer() || '';
     const maxLevel = Math.ceil(answer.length / 3);
 
     if (revealLevel < maxLevel) {
@@ -219,8 +224,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   // Study session UI
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Mode Switcher */}
-      <div className="flex justify-center mb-4">
+      {/* Mode Switcher and Flip Toggle */}
+      <div className="flex justify-center items-center gap-3 mb-4">
         <div className="inline-flex bg-slate-100 rounded-lg p-1">
           <button
             onClick={() => setMode('typing')}
@@ -256,6 +261,20 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
             ProDeck
           </button>
         </div>
+
+        {/* Flip Direction Toggle */}
+        <button
+          onClick={() => setIsFlipped(!isFlipped)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            isFlipped
+              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
+              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
+          }`}
+          title={isFlipped ? 'Direction: Reversed' : 'Direction: Normal'}
+        >
+          <ArrowLeftRight className={`w-4 h-4 ${isFlipped ? 'rotate-90' : ''}`} />
+          Flip
+        </button>
       </div>
 
       {/* Session Stats */}
@@ -287,7 +306,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
               Question
             </p>
             <h2 className="text-2xl font-bold text-slate-900 text-center mb-6">
-              {currentCard.front}
+              {getQuestion()}
             </h2>
 
             {isCorrect === null ? (
@@ -330,7 +349,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 </div>
                 <div className="text-center mb-4">
                   <p className="text-sm text-slate-600 mb-1">Correct answer:</p>
-                  <p className="text-xl font-bold text-slate-900">{currentCard.back}</p>
+                  <p className="text-xl font-bold text-slate-900">{getAnswer()}</p>
                 </div>
                 <div className="flex gap-2">
                   {!isCorrect && (
@@ -362,7 +381,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
               Question
             </p>
             <h2 className="text-2xl font-bold text-slate-900">
-              {currentCard.front}
+              {getQuestion()}
             </h2>
           </div>
 
@@ -372,7 +391,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 Answer
               </p>
               <h2 className="text-2xl font-bold text-green-900 mb-6">
-                {currentCard.back}
+                {getAnswer()}
               </h2>
               <div className="flex gap-3">
                 <button
@@ -416,7 +435,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
               Question
             </p>
             <h2 className="text-2xl font-bold text-slate-900 text-center mb-6">
-              {currentCard.front}
+              {getQuestion()}
             </h2>
 
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg mb-4">
@@ -424,7 +443,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 Progressive Reveal
               </p>
               <p className="text-2xl font-bold text-purple-900 text-center font-mono tracking-wider">
-                {revealLevel > 0 ? getRevealedText(currentCard.back, revealLevel) : '???'}
+                {revealLevel > 0 ? getRevealedText(getAnswer(), revealLevel) : '???'}
               </p>
             </div>
 
