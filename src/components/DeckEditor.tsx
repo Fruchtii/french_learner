@@ -25,6 +25,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   // Deck metadata
   const [title, setTitle] = useState('');
@@ -39,31 +40,40 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   // Refs for keyboard navigation
   const cardRefs = useRef<{ [key: number]: { front: HTMLInputElement | null; back: HTMLInputElement | null } }>({});
 
-  // Check auth and admin status
+  // Check auth and admin status, then load deck
   useEffect(() => {
-    const supabase = getSupabase();
-    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
-      setUser(session?.user ?? null);
+    async function init() {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession() as { data: { session: Session | null } };
+
       if (!session?.user) {
         router.push('/dashboard');
         return;
       }
+
       // Check if user is admin
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', session.user.id)
         .single();
-      setIsAdmin(!!profile?.is_admin);
-    });
+
+      const admin = !!profile?.is_admin;
+
+      // Set all auth state at once, then mark ready
+      setUser(session.user);
+      setIsAdmin(admin);
+      setAuthReady(true);
+    }
+    init();
   }, [router]);
 
-  // Load deck data if editing (wait for both user and admin status to resolve)
+  // Load deck data only after auth is fully resolved
   useEffect(() => {
-    if (deckId && user) {
+    if (deckId && authReady && user) {
       loadDeck();
     }
-  }, [deckId, user, isAdmin]);
+  }, [deckId, authReady]);
 
   const loadDeck = async () => {
     if (!deckId) return;
