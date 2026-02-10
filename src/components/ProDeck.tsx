@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Eye, Check, X, ArrowRight, RotateCcw, Trophy, Sparkles, ChevronRight } from 'lucide-react';
+import { Eye, Check, X, ArrowRight, ArrowLeft, RotateCcw, Trophy, Sparkles, ChevronRight } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 
 // All 4 tenses in order of reveal
@@ -40,6 +40,8 @@ interface ProDeckProps {
   onSubmit: (isCorrect: boolean) => void;
   onSkip: () => void;
   onNext: () => void;
+  onBack?: () => void;
+  canGoBack?: boolean;
   onReadyForNext?: (ready: boolean) => void;
   onPrimaryAction?: (action: () => void) => void;
   onGradeActions?: (actions: GradeActions | null) => void;
@@ -51,6 +53,8 @@ export default function ProDeck({
   onSubmit,
   onSkip,
   onNext,
+  onBack,
+  canGoBack = false,
   onReadyForNext,
   onPrimaryAction,
   onGradeActions,
@@ -253,6 +257,15 @@ export default function ProDeck({
           <div className="px-5 pb-5 animate-fadeIn">
             <p className="text-center text-slate-500 text-sm mb-3">How well did you know all the tenses?</p>
             <div className="flex gap-3">
+              {canGoBack && onBack && (
+                <button
+                  onClick={onBack}
+                  className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                  title="Go back to previous card"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={() => handleGrade(false)}
                 className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
@@ -273,10 +286,19 @@ export default function ProDeck({
 
         {/* Next Button - Only after grading */}
         {state === 'finished' && (
-          <div className="px-5 pb-5 animate-fadeIn">
+          <div className="px-5 pb-5 animate-fadeIn flex gap-2">
+            {canGoBack && onBack && (
+              <button
+                onClick={onBack}
+                className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                title="Go back to previous card"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={onNext}
-              className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
             >
               Next Verb
               <ArrowRight className="w-5 h-5" />

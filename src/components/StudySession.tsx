@@ -272,7 +272,7 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
               onClick={() => setMode('flashcard')}
               className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 mode === 'flashcard'
-                  ? 'bg-white text-teal-600 shadow-sm'
+                  ? 'bg-white text-slate-700 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -380,6 +380,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onSubmit={handleSubmit}
           onSkip={handleSkip}
           onNext={handleNext}
+          onBack={goBack}
+          canGoBack={cardHistory.length > 0}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
           onGradeActions={handleGradeActions}
@@ -392,6 +394,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onSubmit={handleSubmit}
           onSkip={handleSkip}
           onNext={handleNext}
+          onBack={goBack}
+          canGoBack={cardHistory.length > 0}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
           onGradeActions={handleGradeActions}

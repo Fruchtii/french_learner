@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Eye, Check, X, ArrowRight, RotateCcw, Trophy, Layers } from 'lucide-react';
+import { Eye, Check, X, ArrowRight, ArrowLeft, RotateCcw, Trophy, Layers } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
 
 type CardState = 'question' | 'revealed';
@@ -24,6 +24,8 @@ interface FlashCardProps {
   onSubmit: (isCorrect: boolean) => void;
   onSkip: () => void;
   onNext: () => void;
+  onBack?: () => void;
+  canGoBack?: boolean;
   onReadyForNext?: (ready: boolean) => void;
   onPrimaryAction?: (action: () => void) => void;
   onGradeActions?: (actions: GradeActions | null) => void;
@@ -37,6 +39,8 @@ export default function FlashCard({
   onSubmit,
   onSkip,
   onNext,
+  onBack,
+  canGoBack = false,
   onReadyForNext,
   onPrimaryAction,
   onGradeActions,
@@ -103,18 +107,18 @@ export default function FlashCard({
       <div
         className={`
           bg-white rounded-2xl shadow-xl border overflow-hidden transition-all duration-300
-          ${cardState === 'question' ? 'shadow-teal-200/50 border-teal-200 cursor-pointer hover:shadow-teal-300/50' : 'shadow-slate-200/50 border-slate-200'}
+          ${cardState === 'question' ? 'shadow-slate-400/30 border-slate-300 cursor-pointer hover:shadow-slate-500/40' : 'shadow-slate-300/50 border-slate-200'}
         `}
         onClick={cardState === 'question' ? handleReveal : undefined}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3">
+        <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-4 py-3">
           <div className="flex justify-between items-center text-white">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-teal-100" />
-              <span className="text-teal-100 text-sm font-medium">Flashcard</span>
-              <span className="text-white/60">•</span>
-              <span className="text-teal-100 text-sm font-medium uppercase tracking-wide">
+              <Layers className="w-4 h-4 text-slate-300" />
+              <span className="text-slate-300 text-sm font-medium">Flashcard</span>
+              <span className="text-white/40">•</span>
+              <span className="text-slate-300 text-sm font-medium uppercase tracking-wide">
                 {tenseNames[tense]}
               </span>
             </div>
@@ -145,7 +149,7 @@ export default function FlashCard({
           </div>
 
           {/* Pronoun Prompt */}
-          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-5 mb-5 border border-teal-100">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 mb-5 border border-slate-200">
             <p className="text-center text-xl text-slate-800">
               <span className="text-slate-600">Conjugate for</span>{' '}
               <span className="font-bold text-slate-900 text-2xl">
@@ -161,8 +165,8 @@ export default function FlashCard({
                 onClick={handleReveal}
                 className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
               >
-                <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center group-hover:bg-teal-200 transition-colors">
-                  <Eye className="w-6 h-6 text-teal-600" />
+                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                  <Eye className="w-6 h-6 text-slate-600" />
                 </div>
                 <span className="text-slate-600 font-medium">Tap to reveal</span>
                 <span className="text-slate-400 text-sm">or press Space</span>
@@ -173,7 +177,7 @@ export default function FlashCard({
           {/* State: Revealed (Answer) */}
           {cardState === 'revealed' && (
             <div className="animate-fadeIn">
-              <div className="w-full py-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl mb-5">
+              <div className="w-full py-6 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl mb-5">
                 <p className="text-center text-3xl font-mono font-bold text-white">
                   {correctAnswer}
                 </p>
@@ -189,6 +193,15 @@ export default function FlashCard({
               <div className="animate-fadeIn">
                 <p className="text-center text-slate-500 text-sm mb-3">Did you know the answer?</p>
                 <div className="flex gap-3">
+                  {canGoBack && onBack && (
+                    <button
+                      onClick={onBack}
+                      className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                      title="Go back to previous card"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleGrade(false)}
                     className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
@@ -206,10 +219,19 @@ export default function FlashCard({
                 </div>
               </div>
             ) : (
-              <div className="animate-fadeIn">
+              <div className="animate-fadeIn flex gap-2">
+                {canGoBack && onBack && (
+                  <button
+                    onClick={onBack}
+                    className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                    title="Go back to previous card"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={onNext}
-                  className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                 >
                   Next Card
                   <ArrowRight className="w-5 h-5" />

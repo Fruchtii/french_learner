@@ -306,7 +306,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
             onClick={() => setMode('flashcard')}
             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               mode === 'flashcard'
-                ? 'bg-white text-teal-600 shadow-sm'
+                ? 'bg-white text-slate-700 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -566,16 +566,16 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
       {mode === 'flashcard' && (
         <div
           className={`vk-card transition-all duration-300 ${
-            !showAnswer ? 'shadow-teal-200/50 border-teal-200 cursor-pointer hover:shadow-teal-300/50' : 'shadow-slate-200/50 border-slate-200'
+            !showAnswer ? 'shadow-slate-400/30 border-slate-300 cursor-pointer hover:shadow-slate-500/40' : 'shadow-slate-300/50 border-slate-200'
           }`}
           onClick={!showAnswer ? () => setShowAnswer(true) : undefined}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3">
+          <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-4 py-3">
             <div className="flex justify-between items-center text-white">
               <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-teal-100" />
-                <span className="text-teal-100 text-sm font-medium">Flashcard</span>
+                <Layers className="w-4 h-4 text-slate-300" />
+                <span className="text-slate-300 text-sm font-medium">Flashcard</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
@@ -608,8 +608,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   onClick={() => setShowAnswer(true)}
                   className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
                 >
-                  <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center group-hover:bg-teal-200 transition-colors">
-                    <Eye className="w-6 h-6 text-teal-600" />
+                  <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                    <Eye className="w-6 h-6 text-slate-600" />
                   </div>
                   <span className="text-slate-600 font-medium">Tap to reveal</span>
                   <span className="text-slate-400 text-sm">or press Space</span>
@@ -620,7 +620,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
             {/* Revealed answer */}
             {showAnswer && (
               <div className="animate-fadeIn">
-                <div className="w-full py-6 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl mb-5">
+                <div className="w-full py-6 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl mb-5">
                   <p className="text-center text-3xl font-mono font-bold text-white">
                     {getAnswer()}
                   </p>
@@ -674,7 +674,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   )}
                   <button
                     onClick={goToNextCard}
-                    className="flex-1 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     Next Card
                     <ArrowRight className="w-5 h-5" />
