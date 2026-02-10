@@ -50,6 +50,9 @@ interface StudyState {
   // Current card being studied
   currentCard: CurrentCard | null;
 
+  // Card history for "go back" feature
+  cardHistory: CurrentCard[];
+
   // Shuffle mode
   shuffleEnabled: boolean;
   shuffledVerbs: Verb[];
@@ -75,6 +78,7 @@ interface StudyState {
   submitResult: (verbId: string, tense: TenseKey, pronoun: PronounKey, isCorrect: boolean) => void;
   getNextCard: () => CurrentCard | null;
   selectNextCard: () => void;
+  goBack: () => void;
   selectNextVerbForProDeck: () => void;
   toggleShuffle: () => void;
   shuffleVerbs: () => void;
@@ -152,6 +156,7 @@ export const useStudyStore = create<StudyState>()(
   lastSyncError: null,
   userProgress: {},
   currentCard: null,
+  cardHistory: [],
   shuffleEnabled: false,
   shuffledVerbs: [...verbs],
   proDeckVerbIndex: 0,
@@ -295,10 +300,26 @@ export const useStudyStore = create<StudyState>()(
     };
   },
 
-  // Select and set the next card
+  // Select and set the next card (pushes current to history)
   selectNextCard: () => {
+    const { currentCard, cardHistory } = get();
     const nextCard = get().getNextCard();
-    set({ currentCard: nextCard });
+    if (currentCard) {
+      set({ currentCard: nextCard, cardHistory: [...cardHistory, currentCard] });
+    } else {
+      set({ currentCard: nextCard });
+    }
+  },
+
+  // Go back to the previous card
+  goBack: () => {
+    const { cardHistory } = get();
+    if (cardHistory.length === 0) return;
+    const prevCard = cardHistory[cardHistory.length - 1];
+    set({
+      currentCard: prevCard,
+      cardHistory: cardHistory.slice(0, -1),
+    });
   },
 
   // Select next verb for ProDeck mode (cycles through all verbs)

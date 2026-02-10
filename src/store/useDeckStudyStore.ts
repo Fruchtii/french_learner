@@ -32,6 +32,9 @@ interface DeckStudyState {
   // Current card being studied
   currentCard: Card | null;
 
+  // Card history for "go back"
+  cardHistory: Card[];
+
   // Options
   shuffleEnabled: boolean;
   isFlipped: boolean;
@@ -56,6 +59,7 @@ interface DeckStudyState {
   submitResult: (cardId: string, isCorrect: boolean) => void;
   overrideResult: (cardId: string) => void;
   selectNextCard: () => void;
+  goBack: () => void;
   toggleShuffle: () => void;
   toggleFlip: () => void;
   restart: () => void;
@@ -119,6 +123,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
   originalCards: [],
   cardProgress: {},
   currentCard: null,
+  cardHistory: [],
   shuffleEnabled: false,
   isFlipped: false,
   userId: null,
@@ -376,7 +381,19 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       selected = sorted[0];
     }
 
-    set({ currentCard: selected });
+    // Push current card to history
+    const newHistory = currentCard ? [...get().cardHistory, currentCard] : get().cardHistory;
+    set({ currentCard: selected, cardHistory: newHistory });
+  },
+
+  goBack: () => {
+    const { cardHistory } = get();
+    if (cardHistory.length === 0) return;
+    const prevCard = cardHistory[cardHistory.length - 1];
+    set({
+      currentCard: prevCard,
+      cardHistory: cardHistory.slice(0, -1),
+    });
   },
 
   toggleShuffle: () => {
