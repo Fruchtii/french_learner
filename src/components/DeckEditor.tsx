@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Globe, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Globe, Lock, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { getSupabase, type Deck, type Card } from '@/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
@@ -24,6 +24,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   const [loading, setLoading] = useState(!!deckId); // Load deck if editing
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Deck metadata
   const [title, setTitle] = useState('');
@@ -38,23 +39,31 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   // Refs for keyboard navigation
   const cardRefs = useRef<{ [key: number]: { front: HTMLInputElement | null; back: HTMLInputElement | null } }>({});
 
-  // Check auth
+  // Check auth and admin status
   useEffect(() => {
     const supabase = getSupabase();
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         router.push('/dashboard');
+        return;
       }
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single();
+      setIsAdmin(!!profile?.is_admin);
     });
   }, [router]);
 
-  // Load deck data if editing
+  // Load deck data if editing (wait for both user and admin status to resolve)
   useEffect(() => {
     if (deckId && user) {
       loadDeck();
     }
-  }, [deckId, user]);
+  }, [deckId, user, isAdmin]);
 
   const loadDeck = async () => {
     if (!deckId) return;
@@ -72,8 +81,8 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
       if (deckError) throw deckError;
 
-      // Check ownership
-      if (deck.created_by !== user?.id) {
+      // Check ownership (admins can edit any deck)
+      if (deck.created_by !== user?.id && !isAdmin) {
         alert('You do not have permission to edit this deck.');
         router.push('/dashboard');
         return;
@@ -472,9 +481,16 @@ Check the browser console for more details.`);
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">
           {deckId ? 'Edit Deck' : 'Create New Deck'}
         </h1>
+        {isAdmin && deckId && (
+          <p className="text-sm text-purple-600 font-medium mb-6 flex items-center gap-1.5">
+            <Shield className="w-4 h-4" />
+            Editing as admin
+          </p>
+        )}
+        {!isAdmin && deckId && <div className="mb-8" />}
 
         {/* Deck Metadata */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">

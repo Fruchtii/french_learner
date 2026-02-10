@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, Trash2, Globe, Lock, Loader2, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Shield, Trash2, Globe, Lock, Loader2, AlertCircle, ArrowLeft, RefreshCw, Pencil } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase';
 
 interface DeckWithOwner {
@@ -404,6 +404,13 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/dashboard/${deck.id}/edit`}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Deck"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Link>
                           <button
                             onClick={() => handleTogglePublic(deck.id, deck.is_public, deck.title)}
                             className={`p-2 rounded-lg transition-colors ${
