@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, Undo2, Eye } from 'lucide-react';
+import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye } from 'lucide-react';
 import { useDeckStudyStore } from '@/store/useDeckStudyStore';
 import { getSupabase } from '@/lib/supabase';
+import { diffAnswers } from '@/lib/validation';
 
 export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
 
@@ -49,6 +50,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     restart,
     getProgress,
     getBoxLevel,
+    goBack,
+    cardHistory,
   } = useDeckStudyStore();
 
   // Load deck and check auth on mount
@@ -232,20 +235,52 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     );
   }
 
-  // Error state
-  if (error || !currentCard) {
+  // Error state (no cards in deck)
+  if (error) {
     return (
       <div className="w-full max-w-lg mx-auto">
         <div className="vk-card shadow-slate-200/50 border-slate-200 p-8 text-center">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            {error || 'No cards available'}
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">{error}</h3>
           <p className="text-slate-600 text-sm">
             Add some cards to this deck to start studying.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Session complete / all mastered state
+  if (!currentCard && !loading) {
+    const allMastered = progress.mastered === progress.total;
+    return (
+      <div className="w-full max-w-lg mx-auto">
+        <div className="vk-card shadow-green-200/50 border-green-200 p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            {allMastered ? 'All Cards Mastered!' : 'No Cards Due'}
+          </h3>
+          <p className="text-slate-600 mb-2">
+            {allMastered
+              ? 'Amazing work! You\'ve mastered all the cards in this deck.'
+              : 'You\'re all caught up. Come back later when more cards are due for review.'}
+          </p>
+          <div className="flex justify-center gap-4 mb-6 text-sm">
+            <span className="text-green-600 font-semibold">{progress.mastered} mastered</span>
+            <span className="text-amber-600 font-semibold">{progress.learning} learning</span>
+            <span className="text-blue-600 font-semibold">{progress.due} due</span>
+          </div>
+          <button
+            onClick={handleRestart}
+            className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm"
+          >
+            <RotateCcw className="w-4 h-4 inline mr-2" />
+            Restart Session
+          </button>
         </div>
       </div>
     );
@@ -402,17 +437,28 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     className="vk-input"
                   />
                 </div>
-                <button
-                  onClick={handleTypingSubmit}
-                  disabled={!userInput.trim()}
-                  className="vk-btn-primary"
-                >
-                  Check Answer
-                </button>
+                <div className="flex gap-2">
+                  {cardHistory.length > 0 && (
+                    <button
+                      onClick={goBack}
+                      className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                      title="Go back to previous card"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleTypingSubmit}
+                    disabled={!userInput.trim()}
+                    className="flex-1 vk-btn-primary"
+                  >
+                    Check Answer
+                  </button>
+                </div>
               </>
             ) : (
               <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-                <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex items-center justify-center gap-2 mb-3">
                   {isCorrect ? (
                     <>
                       <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
@@ -431,11 +477,59 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     </>
                   )}
                 </div>
-                <div className="text-center mb-4">
-                  <p className="text-sm text-slate-600 mb-1">Correct answer:</p>
-                  <p className="text-xl font-bold text-slate-900">{getAnswer()}</p>
-                </div>
+                {/* Diff display for incorrect answers */}
+                {!isCorrect && (
+                  <div className="text-center mb-4 space-y-1.5">
+                    <p className="text-slate-500 text-xs">Your answer:</p>
+                    <p className="font-mono text-base tracking-wide">
+                      {diffAnswers(userInput, getAnswer()).userDiff.map((seg, i) => (
+                        <span
+                          key={i}
+                          className={
+                            seg.type === 'correct'
+                              ? 'text-slate-900'
+                              : seg.type === 'wrong'
+                              ? 'text-red-600 bg-red-100 rounded px-0.5'
+                              : 'text-red-400 bg-red-50 rounded px-0.5 line-through'
+                          }
+                        >
+                          {seg.char}
+                        </span>
+                      ))}
+                    </p>
+                    <p className="text-slate-500 text-xs mt-1">Correct answer:</p>
+                    <p className="font-mono text-base tracking-wide">
+                      {diffAnswers(userInput, getAnswer()).correctDiff.map((seg, i) => (
+                        <span
+                          key={i}
+                          className={
+                            seg.type === 'correct'
+                              ? 'text-slate-900'
+                              : 'text-green-600 bg-green-100 rounded px-0.5'
+                          }
+                        >
+                          {seg.char}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                )}
+                {isCorrect && (
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-slate-600 mb-1">Answer:</p>
+                    <p className="text-xl font-bold text-slate-900">{getAnswer()}</p>
+                  </div>
+                )}
                 <div className="flex gap-2">
+                  {cardHistory.length > 0 && (
+                    <button
+                      onClick={goBack}
+                      className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                      title="Go back to previous card"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
                   {!isCorrect && (
                     <button
                       onClick={handleTypingOverride}
@@ -447,7 +541,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   )}
                   <button
                     onClick={goToNextCard}
-                    className={`${!isCorrect ? 'flex-1' : 'w-full'} py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2`}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                   >
                     Next Card
                     <ArrowRight className="w-4 h-4" />
@@ -542,6 +636,15 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 <div className="animate-fadeIn">
                   <p className="text-center text-slate-500 text-sm mb-3">Did you know the answer?</p>
                   <div className="flex gap-3">
+                    {cardHistory.length > 0 && (
+                      <button
+                        onClick={goBack}
+                        className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                        title="Go back to previous card"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleFlashcardGrade(false)}
                       className="vk-btn-grade-incorrect"
@@ -559,10 +662,19 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   </div>
                 </div>
               ) : (
-                <div className="animate-fadeIn">
+                <div className="animate-fadeIn flex gap-2">
+                  {cardHistory.length > 0 && (
+                    <button
+                      onClick={goBack}
+                      className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                      title="Go back to previous card"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={goToNextCard}
-                    className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     Next Card
                     <ArrowRight className="w-5 h-5" />

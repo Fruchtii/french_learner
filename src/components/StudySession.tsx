@@ -1,13 +1,22 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers, Shuffle } from 'lucide-react';
+import { Check, X, Zap, Clock, Keyboard, Sparkles, Layers, Shuffle, Trophy, Filter } from 'lucide-react';
 import { useStudyStore } from '@/store/useStudyStore';
+import { getSupabase } from '@/lib/supabase';
 import TypingCard from './TypingCard';
 import FlashCard from './FlashCard';
 import ProDeck from './ProDeck';
 
 export type StudyMode = 'typing' | 'flashcard' | 'prodeck';
+
+const TENSE_OPTIONS = [
+  { key: 'all', label: 'All Tenses' },
+  { key: 'present', label: 'Présent' },
+  { key: 'passeCompose', label: 'Passé Composé' },
+  { key: 'imparfait', label: 'Imparfait' },
+  { key: 'futurSimple', label: 'Futur Simple' },
+] as const;
 
 interface StudySessionProps {
   initialMode?: StudyMode;
@@ -22,6 +31,8 @@ interface GradeActions {
 export default function StudySession({ initialMode = 'typing' }: StudySessionProps) {
   const [mode, setMode] = useState<StudyMode>(initialMode);
   const [readyForNext, setReadyForNext] = useState(false);
+  const [tenseFilter, setTenseFilter] = useState<string>('all');
+  const [showTenseFilter, setShowTenseFilter] = useState(false);
 
   // Ref to store the current primary action (set by child components)
   const primaryActionRef = useRef<(() => void) | null>(null);
@@ -34,12 +45,17 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     sessionStats,
     userProgress,
     shuffleEnabled,
+    setUser,
     initializeCards,
     submitResult,
     selectNextCard,
     selectNextVerbForProDeck,
     toggleShuffle,
     getProgress,
+    loadFromDb,
+    setTenseFilter: setStoreTenseFilter,
+    goBack,
+    cardHistory,
   } = useStudyStore();
 
   // Handle ready for next callback from card components
@@ -126,10 +142,23 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [readyForNext, selectModeAppropriateCard]);
 
-  // Initialize cards on mount
+  // Initialize: check auth, load progress from DB, then initialize cards
   useEffect(() => {
-    initializeCards();
-  }, [initializeCards]);
+    async function init() {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user.id);
+      }
+      initializeCards();
+      if (session?.user) {
+        await loadFromDb();
+        // Re-select card after loading DB progress
+        selectNextCard();
+      }
+    }
+    init();
+  }, []);
 
   // When switching to ProDeck mode, select appropriate verb
   useEffect(() => {
@@ -175,6 +204,44 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     selectModeAppropriateCard();
   };
 
+  // Session complete / all mastered state
+  if (!currentCard && Object.keys(userProgress).length > 0) {
+    const allMastered = progress.mastered === progress.total;
+    return (
+      <div className="w-full max-w-lg mx-auto">
+        <div className="vk-card shadow-green-200/50 border-green-200 p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            {allMastered ? 'All Cards Mastered!' : 'No Cards Due'}
+          </h3>
+          <p className="text-slate-600 mb-2">
+            {allMastered
+              ? 'Amazing work! You\'ve mastered all the cards in this set.'
+              : 'You\'re all caught up. Come back later when more cards are due for review.'}
+          </p>
+          <div className="flex justify-center gap-4 mb-6 text-sm">
+            <span className="text-green-600 font-semibold">{progress.mastered} mastered</span>
+            <span className="text-amber-600 font-semibold">{progress.learning} learning</span>
+            <span className="text-blue-600 font-semibold">{progress.due} due</span>
+          </div>
+          {tenseFilter !== 'all' && (
+            <button
+              onClick={() => {
+                setTenseFilter('all');
+                setStoreTenseFilter(null);
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm"
+            >
+              Study All Tenses
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
   if (!currentCard) {
     return (
@@ -186,57 +253,88 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Mode Switcher and Shuffle Toggle */}
-      <div className="flex justify-center items-center gap-3 mb-4">
-        <div className="inline-flex bg-slate-100 rounded-lg p-1">
+      {/* Mode Switcher, Shuffle, and Tense Filter */}
+      <div className="flex flex-col items-center gap-2 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setMode('typing')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                mode === 'typing'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Keyboard className="w-4 h-4" />
+              Typing
+            </button>
+            <button
+              onClick={() => setMode('flashcard')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                mode === 'flashcard'
+                  ? 'bg-white text-teal-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              Flashcard
+            </button>
+            <button
+              onClick={() => setMode('prodeck')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                mode === 'prodeck'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              ProDeck
+            </button>
+          </div>
+
+          {/* Shuffle Toggle */}
           <button
-            onClick={() => setMode('typing')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              mode === 'typing'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={toggleShuffle}
+            className={`vk-toggle ${shuffleEnabled ? 'vk-toggle-active' : 'vk-toggle-inactive'}`}
+            title={shuffleEnabled ? 'Shuffle: ON (random order)' : 'Shuffle: OFF (original order)'}
           >
-            <Keyboard className="w-4 h-4" />
-            Typing
+            <Shuffle className={`w-4 h-4 ${shuffleEnabled ? 'animate-pulse' : ''}`} />
+            Shuffle
           </button>
+
+          {/* Tense Filter Toggle */}
           <button
-            onClick={() => setMode('flashcard')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              mode === 'flashcard'
-                ? 'bg-white text-teal-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={() => setShowTenseFilter(!showTenseFilter)}
+            className={`vk-toggle ${tenseFilter !== 'all' ? 'vk-toggle-active' : 'vk-toggle-inactive'}`}
+            title="Filter by tense"
           >
-            <Layers className="w-4 h-4" />
-            Flashcard
-          </button>
-          <button
-            onClick={() => setMode('prodeck')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              mode === 'prodeck'
-                ? 'bg-white text-purple-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            ProDeck
+            <Filter className="w-4 h-4" />
+            Tense
           </button>
         </div>
 
-        {/* Shuffle Toggle */}
-        <button
-          onClick={toggleShuffle}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            shuffleEnabled
-              ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300 shadow-sm'
-              : 'bg-slate-100 text-slate-600 border-2 border-transparent hover:bg-slate-200'
-          }`}
-          title={shuffleEnabled ? 'Shuffle: ON (random order)' : 'Shuffle: OFF (original order)'}
-        >
-          <Shuffle className={`w-4 h-4 ${shuffleEnabled ? 'animate-pulse' : ''}`} />
-          Shuffle
-        </button>
+        {/* Tense Filter Dropdown */}
+        {showTenseFilter && (
+          <div className="inline-flex bg-slate-100 rounded-lg p-1 animate-fadeIn">
+            {TENSE_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                onClick={() => {
+                  setTenseFilter(option.key);
+                  const filterValue = option.key === 'all' ? null : option.key;
+                  setStoreTenseFilter(filterValue);
+                }}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  tenseFilter === option.key
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Session Stats Bar */}
@@ -267,6 +365,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onOverride={handleOverride}
           onSkip={handleSkip}
           onNext={handleNext}
+          onBack={goBack}
+          canGoBack={cardHistory.length > 0}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
         />

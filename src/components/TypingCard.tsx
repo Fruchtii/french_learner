@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Check, X, ArrowRight, RotateCcw, Trophy, Undo2, Keyboard } from 'lucide-react';
+import { Check, X, ArrowRight, RotateCcw, Trophy, Undo2, Keyboard, ArrowLeft } from 'lucide-react';
 import { tenseNames, pronouns, type Verb, type TenseKey, type PronounKey } from '@/data/verbs';
-import { validateAnswer } from '@/lib/validation';
+import { validateAnswer, diffAnswers, type DiffSegment } from '@/lib/validation';
 
 type QuizState = 'answering' | 'correct' | 'incorrect';
 
@@ -23,6 +23,8 @@ interface TypingCardProps {
   onOverride: () => void;
   onSkip: () => void;
   onNext: () => void;
+  onBack?: () => void;
+  canGoBack?: boolean;
   onReadyForNext?: (ready: boolean) => void;
   onPrimaryAction?: (action: () => void) => void;
 }
@@ -36,6 +38,8 @@ export default function TypingCard({
   onOverride,
   onSkip,
   onNext,
+  onBack,
+  canGoBack = false,
   onReadyForNext,
   onPrimaryAction,
 }: TypingCardProps) {
@@ -224,26 +228,75 @@ export default function TypingCard({
               </div>
               <span className="font-semibold">Not quite! Back to Box 0</span>
             </div>
-            <p className="text-slate-600 text-sm">
-              Correct answer:{' '}
-              <span className="font-bold text-slate-900 font-mono text-base">
-                {correctAnswer}
-              </span>
-            </p>
+            {/* Diff: show user's answer with wrong chars highlighted */}
+            <div className="space-y-1.5 mt-2">
+              <p className="text-slate-500 text-xs">Your answer:</p>
+              <p className="font-mono text-base tracking-wide">
+                {diffAnswers(userInput, correctAnswer).userDiff.map((seg, i) => (
+                  <span
+                    key={i}
+                    className={
+                      seg.type === 'correct'
+                        ? 'text-slate-900'
+                        : seg.type === 'wrong'
+                        ? 'text-red-600 bg-red-100 rounded px-0.5'
+                        : 'text-red-400 bg-red-50 rounded px-0.5 line-through'
+                    }
+                  >
+                    {seg.char}
+                  </span>
+                ))}
+              </p>
+              <p className="text-slate-500 text-xs mt-1">Correct answer:</p>
+              <p className="font-mono text-base tracking-wide">
+                {diffAnswers(userInput, correctAnswer).correctDiff.map((seg, i) => (
+                  <span
+                    key={i}
+                    className={
+                      seg.type === 'correct'
+                        ? 'text-slate-900'
+                        : 'text-green-600 bg-green-100 rounded px-0.5'
+                    }
+                  >
+                    {seg.char}
+                  </span>
+                ))}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Action Buttons */}
         {quizState === 'answering' ? (
-          <button
-            onClick={handleValidate}
-            disabled={!userInput.trim()}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500/25"
-          >
-            Check Answer
-          </button>
+          <div className="flex gap-2">
+            {canGoBack && onBack && (
+              <button
+                onClick={onBack}
+                className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
+                title="Go back to previous card"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={handleValidate}
+              disabled={!userInput.trim()}
+              className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500/25"
+            >
+              Check Answer
+            </button>
+          </div>
         ) : (
           <div className="flex gap-2">
+            {canGoBack && onBack && (
+              <button
+                onClick={onBack}
+                className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
+                title="Go back to previous card"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
             {quizState === 'incorrect' && (
               <button
                 onClick={handleOverride}
@@ -255,7 +308,7 @@ export default function TypingCard({
             )}
             <button
               onClick={onNext}
-              className={`${quizState === 'incorrect' ? 'flex-1' : 'w-full'} py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500/25 flex items-center justify-center gap-2`}
+              className={`${quizState === 'incorrect' ? 'flex-1' : 'flex-1'} py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-500/25 flex items-center justify-center gap-2`}
             >
               Next Verb
               <ArrowRight className="w-4 h-4" />

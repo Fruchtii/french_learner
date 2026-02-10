@@ -50,6 +50,9 @@ interface StudyState {
   // Current card being studied
   currentCard: CurrentCard | null;
 
+  // Card history for "go back" feature
+  cardHistory: CurrentCard[];
+
   // Shuffle mode
   shuffleEnabled: boolean;
   shuffledVerbs: Verb[];
@@ -57,6 +60,9 @@ interface StudyState {
   // ProDeck verb rotation (to ensure all verbs are shown)
   proDeckVerbIndex: number;
   proDeckVerbsShown: Set<string>;
+
+  // Tense filter (null = all tenses)
+  tenseFilter: string | null;
 
   // Session statistics
   sessionStats: {
@@ -67,10 +73,12 @@ interface StudyState {
 
   // Actions
   setUser: (userId: string | null) => void;
+  setTenseFilter: (tense: string | null) => void;
   initializeCards: () => void;
   submitResult: (verbId: string, tense: TenseKey, pronoun: PronounKey, isCorrect: boolean) => void;
   getNextCard: () => CurrentCard | null;
   selectNextCard: () => void;
+  goBack: () => void;
   selectNextVerbForProDeck: () => void;
   toggleShuffle: () => void;
   shuffleVerbs: () => void;
@@ -148,14 +156,23 @@ export const useStudyStore = create<StudyState>()(
   lastSyncError: null,
   userProgress: {},
   currentCard: null,
+  cardHistory: [],
   shuffleEnabled: false,
   shuffledVerbs: [...verbs],
   proDeckVerbIndex: 0,
   proDeckVerbsShown: new Set<string>(),
+  tenseFilter: null,
   sessionStats: {
     cardsReviewed: 0,
     correctCount: 0,
     incorrectCount: 0,
+  },
+
+  // Set tense filter
+  setTenseFilter: (tense) => {
+    set({ tenseFilter: tense });
+    // Re-select a card that matches the new filter
+    setTimeout(() => get().selectNextCard(), 0);
   },
 
   // Set user (called after auth)
@@ -227,11 +244,15 @@ export const useStudyStore = create<StudyState>()(
 
   // Get the next card that is due for review
   getNextCard: () => {
-    const { userProgress } = get();
+    const { userProgress, tenseFilter } = get();
     const now = Date.now();
 
+    // Apply tense filter if set
+    const filteredCards = Object.values(userProgress)
+      .filter(card => !tenseFilter || card.tense === tenseFilter);
+
     // Get all cards that are due (nextReviewDate <= now)
-    const dueCards = Object.values(userProgress)
+    const dueCards = filteredCards
       .filter(card => card.nextReviewDate <= now)
       .sort((a, b) => {
         // Priority: lower box first (struggling cards), then by review date
@@ -241,7 +262,7 @@ export const useStudyStore = create<StudyState>()(
 
     if (dueCards.length === 0) {
       // No cards due - find the one with earliest next review
-      const allCards = Object.values(userProgress).sort(
+      const allCards = filteredCards.sort(
         (a, b) => a.nextReviewDate - b.nextReviewDate
       );
 
@@ -279,10 +300,26 @@ export const useStudyStore = create<StudyState>()(
     };
   },
 
-  // Select and set the next card
+  // Select and set the next card (pushes current to history)
   selectNextCard: () => {
+    const { currentCard, cardHistory } = get();
     const nextCard = get().getNextCard();
-    set({ currentCard: nextCard });
+    if (currentCard) {
+      set({ currentCard: nextCard, cardHistory: [...cardHistory, currentCard] });
+    } else {
+      set({ currentCard: nextCard });
+    }
+  },
+
+  // Go back to the previous card
+  goBack: () => {
+    const { cardHistory } = get();
+    if (cardHistory.length === 0) return;
+    const prevCard = cardHistory[cardHistory.length - 1];
+    set({
+      currentCard: prevCard,
+      cardHistory: cardHistory.slice(0, -1),
+    });
   },
 
   // Select next verb for ProDeck mode (cycles through all verbs)
@@ -333,10 +370,11 @@ export const useStudyStore = create<StudyState>()(
     });
   },
 
-  // Get overall progress stats
+  // Get overall progress stats (respects tense filter)
   getProgress: () => {
-    const { userProgress } = get();
-    const cards = Object.values(userProgress);
+    const { userProgress, tenseFilter } = get();
+    const cards = Object.values(userProgress)
+      .filter(c => !tenseFilter || c.tense === tenseFilter);
     const now = Date.now();
 
     return {

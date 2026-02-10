@@ -66,3 +66,48 @@ export function validateAnswer(
     normalizedCorrect,
   };
 }
+
+/**
+ * Character-level diff between user answer and correct answer.
+ * Returns arrays of segments with type: 'correct', 'wrong', or 'missing'.
+ */
+export interface DiffSegment {
+  char: string;
+  type: 'correct' | 'wrong' | 'missing' | 'extra';
+}
+
+export function diffAnswers(userInput: string, correctAnswer: string): {
+  userDiff: DiffSegment[];
+  correctDiff: DiffSegment[];
+} {
+  const user = userInput.toLowerCase().trim();
+  const correct = correctAnswer.toLowerCase().trim();
+
+  const userDiff: DiffSegment[] = [];
+  const correctDiff: DiffSegment[] = [];
+
+  const maxLen = Math.max(user.length, correct.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const uChar = i < user.length ? user[i] : null;
+    const cChar = i < correct.length ? correct[i] : null;
+
+    if (uChar && cChar) {
+      if (uChar === cChar) {
+        userDiff.push({ char: userInput[i] || uChar, type: 'correct' });
+        correctDiff.push({ char: correctAnswer[i] || cChar, type: 'correct' });
+      } else {
+        userDiff.push({ char: userInput[i] || uChar, type: 'wrong' });
+        correctDiff.push({ char: correctAnswer[i] || cChar, type: 'correct' });
+      }
+    } else if (uChar && !cChar) {
+      // User typed extra characters
+      userDiff.push({ char: userInput[i] || uChar, type: 'extra' });
+    } else if (!uChar && cChar) {
+      // User missed characters
+      correctDiff.push({ char: correctAnswer[i] || cChar, type: 'missing' });
+    }
+  }
+
+  return { userDiff, correctDiff };
+}
