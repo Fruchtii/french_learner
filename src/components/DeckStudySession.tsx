@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye } from 'lucide-react';
+import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye, List } from 'lucide-react';
 import { useDeckStudyStore } from '@/store/useDeckStudyStore';
 import { getSupabase } from '@/lib/supabase';
 import { diffAnswers } from '@/lib/validation';
@@ -22,6 +22,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [wasOverridden, setWasOverridden] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
+  const [submittedInput, setSubmittedInput] = useState('');
+  const [submittedAnswer, setSubmittedAnswer] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Flashcard mode state
@@ -52,6 +54,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     getBoxLevel,
     goBack,
     cardHistory,
+    cards: allCards,
+    cardProgress,
   } = useDeckStudyStore();
 
   // Load deck and check auth on mount
@@ -87,6 +91,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     setIsCorrect(null);
     setWasOverridden(false);
     setIsShaking(false);
+    setSubmittedInput('');
+    setSubmittedAnswer('');
     setShowAnswer(false);
     setHasGraded(false);
     setRevealLevel(0);
@@ -161,7 +167,10 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
   const handleTypingSubmit = () => {
     if (!userInput.trim() || !currentCard) return;
 
-    const correct = userInput.trim().toLowerCase() === getAnswer().trim().toLowerCase();
+    const answer = getAnswer();
+    const correct = userInput.trim().toLowerCase() === answer.trim().toLowerCase();
+    setSubmittedInput(userInput);
+    setSubmittedAnswer(answer);
     setIsCorrect(correct);
     submitResult(currentCard.id, correct);
 
@@ -482,7 +491,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                   <div className="text-center mb-4 space-y-1.5">
                     <p className="text-slate-500 text-xs">Your answer:</p>
                     <p className="font-mono text-base tracking-wide">
-                      {diffAnswers(userInput, getAnswer()).userDiff.map((seg, i) => (
+                      {diffAnswers(submittedInput, submittedAnswer).userDiff.map((seg, i) => (
                         <span
                           key={i}
                           className={
@@ -499,7 +508,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     </p>
                     <p className="text-slate-500 text-xs mt-1">Correct answer:</p>
                     <p className="font-mono text-base tracking-wide">
-                      {diffAnswers(userInput, getAnswer()).correctDiff.map((seg, i) => (
+                      {diffAnswers(submittedInput, submittedAnswer).correctDiff.map((seg, i) => (
                         <span
                           key={i}
                           className={
@@ -517,7 +526,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                 {isCorrect && (
                   <div className="text-center mb-4">
                     <p className="text-sm text-slate-600 mb-1">Answer:</p>
-                    <p className="text-xl font-bold text-slate-900">{getAnswer()}</p>
+                    <p className="text-xl font-bold text-slate-900">{submittedAnswer}</p>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -813,6 +822,81 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
             <RotateCcw className="w-4 h-4" />
             Restart Session
           </button>
+        </div>
+      )}
+
+      {/* Card Overview — scrollable list below the study area */}
+      {allCards.length > 0 && (
+        <div className="mt-10 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <List className="w-4 h-4 text-slate-500" />
+              <h3 className="font-semibold text-slate-800 text-sm">All Cards</h3>
+              <span className="text-xs text-slate-400">({allCards.length})</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> New</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Learning</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> Familiar</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> Mastered</span>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+            {allCards.map((card) => {
+              const prog = cardProgress[card.id];
+              const box = prog?.box ?? 0;
+              const boxColors = [
+                { bg: 'bg-red-50', border: 'border-red-200', dot: 'bg-red-400', text: 'text-red-700', label: 'Box 0' },
+                { bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-400', text: 'text-amber-700', label: 'Box 1' },
+                { bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-400', text: 'text-blue-700', label: 'Box 2' },
+                { bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-400', text: 'text-green-700', label: 'Box 3' },
+              ];
+              const style = boxColors[Math.min(box, 3)];
+              const isCurrent = currentCard?.id === card.id;
+              const isDue = prog ? prog.nextReviewDate <= Date.now() : true;
+
+              return (
+                <div
+                  key={card.id}
+                  className={`flex items-center gap-3 px-5 py-3 transition-colors ${
+                    isCurrent ? 'bg-indigo-50 border-l-4 border-l-indigo-400' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  {/* Box indicator */}
+                  <div className={`flex-shrink-0 w-7 h-7 rounded-lg ${style.bg} border ${style.border} flex items-center justify-center`}>
+                    <span className={`text-xs font-bold ${style.text}`}>{box}</span>
+                  </div>
+
+                  {/* Card content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 text-sm truncate">
+                        {isFlipped ? card.back : card.front}
+                      </span>
+                      <span className="text-slate-300 flex-shrink-0">&rarr;</span>
+                      <span className="text-slate-600 text-sm truncate">
+                        {isFlipped ? card.front : card.back}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex-shrink-0 flex items-center gap-2 text-xs">
+                    {prog && (prog.timesCorrect > 0 || prog.timesIncorrect > 0) && (
+                      <span className="text-slate-400">
+                        <span className="text-green-600 font-medium">{prog.timesCorrect}</span>
+                        /
+                        <span className="text-red-600 font-medium">{prog.timesIncorrect}</span>
+                      </span>
+                    )}
+                    {isDue && (
+                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold uppercase">Due</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
