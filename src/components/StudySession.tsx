@@ -54,6 +54,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
     getProgress,
     loadFromDb,
     setTenseFilter: setStoreTenseFilter,
+    goBack,
+    cardHistory,
   } = useStudyStore();
 
   // Handle ready for next callback from card components
@@ -363,6 +365,8 @@ export default function StudySession({ initialMode = 'typing' }: StudySessionPro
           onOverride={handleOverride}
           onSkip={handleSkip}
           onNext={handleNext}
+          onBack={goBack}
+          canGoBack={cardHistory.length > 0}
           onReadyForNext={handleReadyForNext}
           onPrimaryAction={handlePrimaryAction}
         />
