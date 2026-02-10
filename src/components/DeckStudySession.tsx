@@ -232,20 +232,52 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     );
   }
 
-  // Error state
-  if (error || !currentCard) {
+  // Error state (no cards in deck)
+  if (error) {
     return (
       <div className="w-full max-w-lg mx-auto">
         <div className="vk-card shadow-slate-200/50 border-slate-200 p-8 text-center">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-slate-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            {error || 'No cards available'}
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">{error}</h3>
           <p className="text-slate-600 text-sm">
             Add some cards to this deck to start studying.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Session complete / all mastered state
+  if (!currentCard && !loading) {
+    const allMastered = progress.mastered === progress.total;
+    return (
+      <div className="w-full max-w-lg mx-auto">
+        <div className="vk-card shadow-green-200/50 border-green-200 p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            {allMastered ? 'All Cards Mastered!' : 'No Cards Due'}
+          </h3>
+          <p className="text-slate-600 mb-2">
+            {allMastered
+              ? 'Amazing work! You\'ve mastered all the cards in this deck.'
+              : 'You\'re all caught up. Come back later when more cards are due for review.'}
+          </p>
+          <div className="flex justify-center gap-4 mb-6 text-sm">
+            <span className="text-green-600 font-semibold">{progress.mastered} mastered</span>
+            <span className="text-amber-600 font-semibold">{progress.learning} learning</span>
+            <span className="text-blue-600 font-semibold">{progress.due} due</span>
+          </div>
+          <button
+            onClick={handleRestart}
+            className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors text-sm"
+          >
+            <RotateCcw className="w-4 h-4 inline mr-2" />
+            Restart Session
+          </button>
         </div>
       </div>
     );

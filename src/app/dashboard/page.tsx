@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil, Sparkles } from 'lucide-react';
+import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil, Sparkles, Trash2 } from 'lucide-react';
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
 import type { Session } from '@supabase/supabase-js';
 
 interface DeckWithCount extends Deck {
   card_count?: number;
+  mastered_count?: number;
+  learning_count?: number;
 }
 
 export default function DashboardPage() {
   const [decks, setDecks] = useState<DeckWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [deletingDeckId, setDeletingDeckId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -62,16 +65,67 @@ export default function DashboardPage() {
 
     if (error) {
       console.error('Error fetching decks:', error);
-    } else {
-      // Transform the data to include card count
-      const decksWithCount = data?.map((deck: any) => ({
-        ...deck,
-        card_count: deck.cards[0]?.count || 0,
-      })) || [];
-      setDecks(decksWithCount);
+      setLoading(false);
+      return;
     }
 
+    // Transform the data to include card count
+    const decksWithCount: DeckWithCount[] = data?.map((deck: any) => ({
+      ...deck,
+      card_count: deck.cards[0]?.count || 0,
+      mastered_count: 0,
+      learning_count: 0,
+    })) || [];
+
+    // Fetch study progress for all decks
+    try {
+      const { data: progressData } = await supabase
+        .from('study_progress')
+        .select('card_id, box, cards!inner(deck_id)');
+
+      if (progressData) {
+        // Build a map: deckId -> { mastered, learning }
+        const progressByDeck: Record<string, { mastered: number; learning: number }> = {};
+        for (const row of progressData as any[]) {
+          const deckId = row.cards?.deck_id;
+          if (!deckId) continue;
+          if (!progressByDeck[deckId]) progressByDeck[deckId] = { mastered: 0, learning: 0 };
+          if (row.box >= 3) progressByDeck[deckId].mastered++;
+          else if (row.box > 0) progressByDeck[deckId].learning++;
+        }
+        // Merge into decks
+        for (const deck of decksWithCount) {
+          const prog = progressByDeck[deck.id];
+          if (prog) {
+            deck.mastered_count = prog.mastered;
+            deck.learning_count = prog.learning;
+          }
+        }
+      }
+    } catch {
+      // Progress fetch failed — proceed without it
+    }
+
+    setDecks(decksWithCount);
     setLoading(false);
+  };
+
+  const handleDeleteDeck = async (deckId: string) => {
+    if (!confirm('Are you sure you want to delete this deck? This cannot be undone.')) return;
+    setDeletingDeckId(deckId);
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('decks').delete().eq('id', deckId);
+      if (error) {
+        console.error('Error deleting deck:', error);
+        alert('Failed to delete deck. Please try again.');
+      } else {
+        setDecks(decks.filter(d => d.id !== deckId));
+      }
+    } catch (err) {
+      console.error('Error deleting deck:', err);
+    }
+    setDeletingDeckId(null);
   };
 
   if (loading) {
@@ -237,15 +291,25 @@ export default function DashboardPage() {
                   key={deck.id}
                   className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all overflow-hidden relative"
                 >
-                  {/* Edit Button (Top Right) */}
-                  <Link
-                    href={`/dashboard/${deck.id}/edit`}
-                    className="absolute top-4 right-4 z-10 p-2 bg-white rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all shadow-sm opacity-0 group-hover:opacity-100"
-                    onClick={(e) => e.stopPropagation()}
-                    title="Edit deck"
-                  >
-                    <Pencil className="w-4 h-4 text-slate-600 hover:text-blue-600" />
-                  </Link>
+                  {/* Action Buttons (Top Right) */}
+                  <div className="absolute top-4 right-4 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link
+                      href={`/dashboard/${deck.id}/edit`}
+                      className="p-2 bg-white rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all shadow-sm"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Edit deck"
+                    >
+                      <Pencil className="w-4 h-4 text-slate-600 hover:text-blue-600" />
+                    </Link>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteDeck(deck.id); }}
+                      disabled={deletingDeckId === deck.id}
+                      className="p-2 bg-white rounded-lg border border-slate-200 hover:border-red-400 hover:bg-red-50 transition-all shadow-sm disabled:opacity-50"
+                      title="Delete deck"
+                    >
+                      <Trash2 className="w-4 h-4 text-slate-600 hover:text-red-600" />
+                    </button>
+                  </div>
 
                   {/* Main Deck Link (Study) */}
                   <Link href={`/learn/${deck.id}`} className="block">
@@ -280,7 +344,7 @@ export default function DashboardPage() {
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="text-sm text-slate-500">
                           <span className="font-semibold text-slate-700">
                             {deck.card_count || 0}
@@ -292,11 +356,33 @@ export default function DashboardPage() {
                           <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
+
+                      {/* Progress indicators */}
+                      {(deck.card_count || 0) > 0 && (deck.mastered_count! > 0 || deck.learning_count! > 0) && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-green-600 font-medium">{deck.mastered_count} mastered</span>
+                          <span className="text-slate-300">&middot;</span>
+                          <span className="text-amber-600 font-medium">{deck.learning_count} learning</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="h-1 bg-slate-100">
-                      <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 w-0 group-hover:w-full transition-all duration-500" />
+                    {/* Progress Bar (real progress, not just hover animation) */}
+                    <div className="h-1.5 bg-slate-100">
+                      {(deck.card_count || 0) > 0 ? (
+                        <div className="h-full flex">
+                          <div
+                            className="bg-green-500 transition-all duration-500"
+                            style={{ width: `${((deck.mastered_count || 0) / deck.card_count!) * 100}%` }}
+                          />
+                          <div
+                            className="bg-amber-400 transition-all duration-500"
+                            style={{ width: `${((deck.learning_count || 0) / deck.card_count!) * 100}%` }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 w-0 group-hover:w-full transition-all duration-500" />
+                      )}
                     </div>
                   </Link>
                 </div>
