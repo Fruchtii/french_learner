@@ -436,6 +436,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && userInput.trim()) {
+                        e.preventDefault();
+                        e.nativeEvent.stopImmediatePropagation();
                         handleTypingSubmit();
                       }
                     }}
