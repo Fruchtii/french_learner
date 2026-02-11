@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import DeckStudySession from '@/components/DeckStudySession';
 import AuthButton from '@/components/AuthButton';
+import VokabLogo from '@/components/VokabLogo';
 import { getSupabase, type Deck } from '@/lib/supabase';
 
 export default function LearnDeckPage() {
@@ -66,10 +67,7 @@ export default function LearnDeckPage() {
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">vk</span>
-                </div>
-                <span className="font-semibold text-lg text-slate-800">vokab</span>
+                <VokabLogo variant="dark" size={28} />
               </Link>
               <AuthButton />
             </div>
@@ -95,10 +93,7 @@ export default function LearnDeckPage() {
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">vk</span>
-                </div>
-                <span className="font-semibold text-lg text-slate-800">vokab</span>
+                <VokabLogo variant="dark" size={28} />
               </Link>
               <AuthButton />
             </div>
@@ -143,10 +138,7 @@ export default function LearnDeckPage() {
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">vk</span>
-              </div>
-              <span className="font-semibold text-lg text-slate-800">vokab</span>
+              <VokabLogo variant="dark" size={28} />
             </Link>
             <AuthButton />
           </div>

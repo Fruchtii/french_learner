@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil, Sparkles, Trash2 } from 'lucide-react';
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
+import VokabLogo from '@/components/VokabLogo';
 import type { Session } from '@supabase/supabase-js';
 
 interface DeckWithCount extends Deck {
@@ -134,10 +135,7 @@ export default function DashboardPage() {
         <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">vk</span>
-              </div>
-              <span className="font-semibold text-lg text-slate-800">vokab</span>
+              <VokabLogo variant="dark" size={28} />
             </Link>
             <AuthButton />
           </div>
@@ -156,10 +154,7 @@ export default function DashboardPage() {
         <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">vk</span>
-              </div>
-              <span className="font-semibold text-lg text-slate-800">vokab</span>
+              <VokabLogo variant="dark" size={28} />
             </Link>
             <AuthButton />
           </div>
@@ -189,10 +184,7 @@ export default function DashboardPage() {
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">vk</span>
-            </div>
-            <span className="font-semibold text-lg text-slate-800">vokab</span>
+            <VokabLogo variant="dark" size={28} />
           </Link>
           <AuthButton />
         </div>

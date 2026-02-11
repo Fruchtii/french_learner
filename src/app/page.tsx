@@ -3,6 +3,7 @@
 import { Brain, ChevronRight, Sparkles, Layers, Keyboard, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import AuthButton from '@/components/AuthButton';
+import VokabLogo from '@/components/VokabLogo';
 
 export default function Home() {
   return (
@@ -10,12 +11,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-slate-950/80 backdrop-blur-xl border-b border-white/5 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 animate-pulse-glow">
-              <span className="text-white font-bold text-sm tracking-tight">vk</span>
-            </div>
-            <span className="font-bold text-xl text-white tracking-tight">vokab</span>
-          </div>
+          <VokabLogo variant="light" size={32} />
           <div className="flex items-center gap-5">
             <Link
               href="/dashboard"
@@ -292,12 +288,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-[10px]">vk</span>
-            </div>
-            <span className="font-medium text-slate-500 text-sm">vokab</span>
-          </div>
+          <VokabLogo variant="light" size={24} />
           <p className="text-slate-600 text-xs">
             &copy; {new Date().getFullYear()} vokab. Built for learners.
           </p>
