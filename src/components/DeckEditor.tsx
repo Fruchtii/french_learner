@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Globe, Lock, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Globe, Lock, Shield, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import { getSupabase, type Deck, type Card } from '@/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
@@ -162,6 +162,18 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
     });
 
     setCards(updatedCards);
+  };
+
+  const handleSwapFrontBack = () => {
+    const confirmed = confirm(
+      'Swap Front ↔ Back for all cards?\n\nThis will permanently swap the front and back of every card when you save.'
+    );
+    if (!confirmed) return;
+    setCards(cards.map(card => ({
+      ...card,
+      front: card.back,
+      back: card.front,
+    })));
   };
 
   const handleCardChange = (index: number, field: 'front' | 'back', value: string) => {
@@ -574,13 +586,25 @@ Check the browser console for more details.`);
             <h2 className="text-lg font-semibold text-slate-900">
               Cards ({cards.filter(c => !c._deleted).length})
             </h2>
-            <button
-              onClick={handleAddCard}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Card
-            </button>
+            <div className="flex items-center gap-3">
+              {isAdmin && deckId && (
+                <button
+                  onClick={handleSwapFrontBack}
+                  className="flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium transition-colors text-sm"
+                  title="Swap front and back for all cards"
+                >
+                  <ArrowLeftRight className="w-4 h-4" />
+                  Swap Front / Back
+                </button>
+              )}
+              <button
+                onClick={handleAddCard}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Card
+              </button>
+            </div>
           </div>
 
           {/* Cards List */}
