@@ -183,12 +183,20 @@ Neither reset affects **Leitner box progress** (long-term data is preserved).
 
 ### Persistence
 
-| Data                | Persisted?       | Storage                          |
-|---------------------|------------------|----------------------------------|
-| Learning mode       | Yes              | `localStorage` (global key)      |
-| Leitner box level   | Yes              | `localStorage` + Supabase DB     |
-| Session progress    | No (session-only)| Zustand state (lost on refresh)  |
-| Group assignments   | No (session-only)| Rebuilt each session from Leitner |
+| Data                | Persisted?       | Storage                                    |
+|---------------------|------------------|--------------------------------------------|
+| Learning mode       | Yes              | `localStorage` (global key)                |
+| Leitner box level   | Yes              | `localStorage` + Supabase DB               |
+| Group progress      | Yes              | `localStorage` (per-deck key)              |
+| Session card state  | Yes              | `localStorage` (inside group state)        |
+| Review pool         | Yes              | `localStorage` (inside group state)        |
+| Session stats       | Yes              | `localStorage` (inside group state)        |
+| Group assignments   | Yes              | `localStorage` (validated on deck load)    |
+
+Group state is stored under `vokab-group-state-{deckId}`. On deck load, the
+saved state is validated: if cards were added or removed from the deck, the
+saved state is discarded and groups are rebuilt from scratch. "Reset All" and
+"Restart Session" clear the saved group state.
 
 ---
 

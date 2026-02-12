@@ -43,8 +43,9 @@ export interface DeckCardProgress {
 }
 
 /**
- * Session-only progress for group mode. Tracks how a card is doing
- * within the current study session (not persisted across page loads).
+ * Progress for group mode. Tracks how a card is doing within the current
+ * study session. Persisted to localStorage so progress survives page reloads.
+ * Cleared on "Reset All" or "Restart Session".
  */
 export interface SessionCardState {
   /** Consecutive correct answers this session. Resets to 0 on incorrect. */
@@ -106,7 +107,7 @@ interface DeckStudyState {
   // Learning mode — persisted to localStorage (global, not per-deck)
   learningMode: LearningMode;
 
-  // Group learning state — session-only, rebuilt each time
+  // Group learning state — persisted to localStorage per-deck
   groups: string[][];
   currentGroupIndex: number;
   sessionCardProgress: Record<string, SessionCardState>;
@@ -183,6 +184,56 @@ function saveLearningMode(mode: LearningMode): void {
   } catch {
     // ignore
   }
+}
+
+/** Per-deck key for persisted group study progress. */
+function getGroupStateKey(deckId: string): string {
+  return `vokab-group-state-${deckId}`;
+}
+
+/** Shape of the persisted group state. */
+interface PersistedGroupState {
+  groups: string[][];
+  currentGroupIndex: number;
+  sessionCardProgress: Record<string, SessionCardState>;
+  reviewPool: string[];
+  sessionStats: { correct: number; incorrect: number; total: number };
+}
+
+function loadGroupStateFromStorage(deckId: string): PersistedGroupState | null {
+  try {
+    const raw = localStorage.getItem(getGroupStateKey(deckId));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveGroupStateToStorage(deckId: string, state: PersistedGroupState): void {
+  try {
+    localStorage.setItem(getGroupStateKey(deckId), JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+}
+
+function clearGroupStateFromStorage(deckId: string): void {
+  try {
+    localStorage.removeItem(getGroupStateKey(deckId));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Check that saved group state is still valid for the current deck.
+ * Returns false if cards were added/removed since the state was saved.
+ */
+function isGroupStateValid(saved: PersistedGroupState, currentCardIds: Set<string>): boolean {
+  const savedCardIds = saved.groups.flat();
+  if (savedCardIds.length !== currentCardIds.size) return false;
+  return savedCardIds.every(id => currentCardIds.has(id));
 }
 
 // ============================================================================
@@ -279,7 +330,21 @@ function buildGroupState(cards: Card[], cardProgress: Record<string, DeckCardPro
 // STORE
 // ============================================================================
 
-export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
+export const useDeckStudyStore = create<DeckStudyState>((set, get) => {
+  /** Persist current group state to localStorage (call after group mutations). */
+  const saveGroups = () => {
+    const s = get();
+    if (!s.deckId || s.learningMode !== 'groups') return;
+    saveGroupStateToStorage(s.deckId, {
+      groups: s.groups,
+      currentGroupIndex: s.currentGroupIndex,
+      sessionCardProgress: s.sessionCardProgress,
+      reviewPool: s.reviewPool,
+      sessionStats: s.sessionStats,
+    });
+  };
+
+  return {
   deckId: null,
   cards: [],
   originalCards: [],
@@ -296,7 +361,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
   // Learning mode — loaded from localStorage, defaults to 'groups'
   learningMode: loadLearningMode(),
 
-  // Group learning state — session-only
+  // Group learning state — persisted to localStorage per-deck
   groups: [],
   currentGroupIndex: 0,
   sessionCardProgress: {},
@@ -331,6 +396,8 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       set(buildGroupState(cards, cardProgress));
     } else {
       // Clear group state when switching to classic
+      const { deckId } = get();
+      if (deckId) clearGroupStateFromStorage(deckId);
       set({
         groups: [],
         currentGroupIndex: 0,
@@ -419,7 +486,24 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
       // Initialize group state if in group mode
       if (get().learningMode === 'groups') {
-        set(buildGroupState(cards, progress));
+        // Try to restore saved group progress from localStorage
+        const savedGroupState = loadGroupStateFromStorage(deckId);
+        const cardIdSet = new Set<string>(cards.map((c: Card) => c.id));
+
+        if (savedGroupState && isGroupStateValid(savedGroupState, cardIdSet)) {
+          // Restore saved state (picks up where the user left off)
+          set({
+            groups: savedGroupState.groups,
+            currentGroupIndex: savedGroupState.currentGroupIndex,
+            sessionCardProgress: savedGroupState.sessionCardProgress,
+            reviewPool: savedGroupState.reviewPool,
+            sessionStats: savedGroupState.sessionStats,
+            introPhase: false,
+          });
+        } else {
+          // No saved state or deck changed — build fresh groups
+          set(buildGroupState(cards, progress));
+        }
       }
 
       // Select first card
@@ -504,6 +588,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
     // Persist to localStorage
     saveProgressToStorage(deckId, updatedProgress);
+    saveGroups();
 
     // Sync to DB if logged in (fire and forget)
     if (userId) {
@@ -597,6 +682,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
     set(stateUpdate as DeckStudyState);
     saveProgressToStorage(deckId, updatedProgress);
+    saveGroups();
 
     if (userId) {
       const supabase = getSupabase();
@@ -679,6 +765,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
             reviewPool,
             sessionCardProgress,
           });
+          saveGroups();
           return;
         }
 
@@ -731,6 +818,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
             reviewPool,
             sessionCardProgress,
           });
+          saveGroups();
           return;
         }
 
@@ -758,6 +846,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
         reviewPool,
         sessionCardProgress,
       });
+      saveGroups();
 
     } else {
       // =====================================================================
@@ -904,8 +993,11 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
    * rebuilds groups from current Leitner progress.
    */
   restart: () => {
-    const { originalCards, shuffleEnabled, learningMode, cardProgress } = get();
+    const { originalCards, shuffleEnabled, learningMode, cardProgress, deckId } = get();
     const newCards = shuffleEnabled ? shuffleArray(originalCards) : [...originalCards];
+
+    // Clear saved group state so session starts fresh
+    if (deckId) clearGroupStateFromStorage(deckId);
 
     set({
       sessionStats: { correct: 0, incorrect: 0, total: 0 },
@@ -954,8 +1046,11 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
    * review pool, and reset session stats. Leitner progress is NOT affected.
    */
   resetAll: () => {
-    const { originalCards, shuffleEnabled, learningMode, cardProgress } = get();
+    const { originalCards, shuffleEnabled, learningMode, cardProgress, deckId } = get();
     const newCards = shuffleEnabled ? shuffleArray(originalCards) : [...originalCards];
+
+    // Clear saved group state so it starts fresh
+    if (deckId) clearGroupStateFromStorage(deckId);
 
     set({
       sessionStats: { correct: 0, incorrect: 0, total: 0 },
@@ -999,4 +1094,4 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
     const { cardProgress } = get();
     return cardProgress[cardId]?.box ?? 0;
   },
-}));
+}; });
