@@ -113,6 +113,10 @@ interface DeckStudyState {
   reviewPool: string[];
   introPhase: boolean;
 
+  // Tracks the box level before the last incorrect submit, so "I was right"
+  // can properly restore the card to the correct box.
+  preSubmitBox: number | null;
+
   // Actions
   loadDeck: (deckId: string) => Promise<void>;
   setUser: (userId: string | null) => void;
@@ -298,6 +302,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
   sessionCardProgress: {},
   reviewPool: [],
   introPhase: false,
+  preSubmitBox: null,
 
   // --------------------------------------------------------------------------
   // AUTH
@@ -466,6 +471,8 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
     const stateUpdate: Partial<DeckStudyState> = {
       cardProgress: updatedProgress,
+      // Save the box level before this submit so "I was right" can restore it
+      preSubmitBox: isCorrect ? null : card.box,
       sessionStats: {
         correct: sessionStats.correct + (isCorrect ? 1 : 0),
         incorrect: sessionStats.incorrect + (isCorrect ? 0 : 1),
@@ -525,16 +532,19 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
   // --------------------------------------------------------------------------
 
   /**
-   * User says "I was right" — treat the last incorrect answer as correct.
-   * Also updates session streak in group mode (sets to 1, conservative).
+   * User says "I was right" — fully undo the incorrect answer and apply a
+   * correct result instead. Uses preSubmitBox to restore the box level to
+   * what it was *before* the wrong answer was recorded.
    */
   overrideResult: (cardId: string) => {
-    const { cardProgress, sessionStats, deckId, userId, learningMode, sessionCardProgress } = get();
+    const { cardProgress, sessionStats, deckId, userId, learningMode, sessionCardProgress, preSubmitBox } = get();
     const card = cardProgress[cardId];
     if (!card || !deckId) return;
 
     const now = Date.now();
-    const newBox = Math.min(card.box + 1, MAX_BOX);
+    // Restore the box to what it was before the incorrect submit, then +1
+    const restoredBox = preSubmitBox ?? card.box;
+    const newBox = Math.min(restoredBox + 1, MAX_BOX);
     const nextReviewDate = now + BOX_INTERVALS[newBox as keyof typeof BOX_INTERVALS];
 
     const updatedCard: DeckCardProgress = {
@@ -553,6 +563,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
     const stateUpdate: Partial<DeckStudyState> = {
       cardProgress: updatedProgress,
+      preSubmitBox: null,
       sessionStats: {
         correct: sessionStats.correct + 1,
         incorrect: Math.max(0, sessionStats.incorrect - 1),
@@ -560,14 +571,22 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       },
     };
 
-    // Group mode: count the override as 1 correct (conservative)
+    // Group mode: undo the streak reset from the incorrect answer.
+    // The incorrect submit set streak to 0. We restore it to pre-submit + 1.
+    // (submitResult set streak = 0 and attempts++, so we undo that.)
     if (learningMode === 'groups') {
       const sessionProg = sessionCardProgress[cardId];
       if (sessionProg) {
+        // sessionProg.sessionStreak is 0 (reset by submitResult on incorrect).
+        // sessionProg.attempts was incremented. We keep the attempt count but
+        // restore streak as if the answer was correct: previous streak + 1.
+        // Since we don't store the pre-submit streak, use 1 as minimum
+        // (the answer they overrode counts as 1 correct).
+        const restoredStreak = Math.max(1, sessionProg.sessionStreak + 1);
         const updated: SessionCardState = {
           ...sessionProg,
-          sessionStreak: 1,
-          graduated: 1 >= GRADUATION_STREAK,
+          sessionStreak: restoredStreak,
+          graduated: restoredStreak >= GRADUATION_STREAK || sessionProg.graduated,
         };
         stateUpdate.sessionCardProgress = {
           ...sessionCardProgress,
