@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye, List } from 'lucide-react';
-import { useDeckStudyStore } from '@/store/useDeckStudyStore';
+import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye, List, BookOpen, ChevronDown } from 'lucide-react';
+import { useDeckStudyStore, type LearningMode } from '@/store/useDeckStudyStore';
 import { getSupabase } from '@/lib/supabase';
 import { diffAnswers } from '@/lib/validation';
 
@@ -56,6 +56,12 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     cardHistory,
     cards: allCards,
     cardProgress,
+    learningMode,
+    setLearningMode,
+    introPhase,
+    markCardIntroduced,
+    getGroupProgress,
+    sessionCardProgress,
   } = useDeckStudyStore();
 
   // Load deck and check auth on mount
@@ -73,6 +79,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
   const boxLevel = currentCard ? getBoxLevel(currentCard.id) : 0;
   const progress = getProgress();
+  const groupProgress = getGroupProgress();
 
   // Helper functions for question/answer based on flip state
   const getQuestion = useCallback(() => {
@@ -109,6 +116,15 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
       // Don't intercept when user is typing in an input
       const activeElement = document.activeElement as HTMLElement;
       if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) {
+        return;
+      }
+
+      // Handle introduction phase (group mode)
+      if (introPhase) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          markCardIntroduced();
+        }
         return;
       }
 
@@ -161,7 +177,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mode, isCorrect, showAnswer, hasGraded, isGrading, revealLevel]);
+  }, [mode, isCorrect, showAnswer, hasGraded, isGrading, revealLevel, introPhase, markCardIntroduced]);
 
   // === TYPING MODE ===
   const handleTypingSubmit = () => {
@@ -356,6 +372,58 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
         </button>
       </div>
 
+      {/* Learning Algorithm Selector */}
+      <div className="flex justify-center mb-3">
+        <div className="relative inline-flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+          <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+          <select
+            value={learningMode}
+            onChange={(e) => setLearningMode(e.target.value as LearningMode)}
+            className="appearance-none bg-transparent text-sm text-slate-700 font-medium pr-5 focus:outline-none cursor-pointer"
+          >
+            <option value="groups">Groups of 7 (Recommended)</option>
+            <option value="classic">Classic SRS</option>
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Group Progress Bar (group mode only) */}
+      {groupProgress && (
+        <div className="mb-4 bg-white rounded-xl p-3 shadow-sm border border-slate-200">
+          <div className="flex justify-between items-center text-sm mb-2">
+            <span className="font-semibold text-slate-700">
+              Group {groupProgress.currentGroupIndex + 1} of {groupProgress.totalGroups}
+            </span>
+            <span className="text-slate-500 text-xs">
+              {groupProgress.totalGraduated} / {groupProgress.totalCards} learned
+            </span>
+          </div>
+          <div className="flex gap-1">
+            {Array.from({ length: groupProgress.groupSize }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-2 rounded-full transition-colors ${
+                  i < groupProgress.groupGraduated
+                    ? 'bg-green-400'
+                    : i < groupProgress.groupIntroduced
+                    ? 'bg-indigo-200'
+                    : 'bg-slate-100'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between items-center mt-1.5 text-[10px] text-slate-400">
+            <span>{groupProgress.groupGraduated}/{groupProgress.groupSize} mastered in group</span>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" /> Done</span>
+              <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-200 inline-block" /> Seen</span>
+              <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-100 inline-block border border-slate-200" /> New</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Session Stats */}
       <div className="flex justify-center gap-4 mb-4 text-sm">
         <div className="flex items-center gap-1.5 text-slate-600">
@@ -377,8 +445,57 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
         )}
       </div>
 
+      {/* INTRODUCTION PHASE (group mode) */}
+      {introPhase && currentCard && (
+        <div className="vk-card shadow-indigo-200/50 border-indigo-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3">
+            <div className="flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-indigo-200" />
+                <span className="text-indigo-100 text-sm font-medium">New Card</span>
+              </div>
+              {groupProgress && (
+                <span className="text-indigo-200 text-xs font-medium">
+                  {groupProgress.groupIntroduced + 1} of {groupProgress.groupSize}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 text-center">
+            {/* Question side */}
+            <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Question</p>
+            <h2 className="text-3xl font-bold text-slate-900 mb-6">
+              {getQuestion()}
+            </h2>
+
+            {/* Answer side — revealed immediately */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 mb-6">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Answer</p>
+              <p className="text-3xl font-bold text-indigo-900 font-mono">{getAnswer()}</p>
+            </div>
+
+            {/* Got it button */}
+            <button
+              onClick={markCardIntroduced}
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+            >
+              Got it
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="px-5 pb-4">
+            <p className="text-center text-slate-400 text-xs">
+              Press Space or Enter to continue
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* TYPING MODE */}
-      {mode === 'typing' && (
+      {!introPhase && mode === 'typing' && (
         <div className="vk-card shadow-blue-200/50 border-blue-200">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
@@ -436,6 +553,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && userInput.trim()) {
+                        e.preventDefault();
+                        e.nativeEvent.stopImmediatePropagation();
                         handleTypingSubmit();
                       }
                     }}
@@ -572,7 +691,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
       )}
 
       {/* FLASHCARD MODE */}
-      {mode === 'flashcard' && (
+      {!introPhase && mode === 'flashcard' && (
         <div
           className={`vk-card transition-all duration-300 ${
             !showAnswer ? 'shadow-slate-400/30 border-slate-300 cursor-pointer hover:shadow-slate-500/40' : 'shadow-slate-300/50 border-slate-200'
@@ -696,7 +815,7 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
       )}
 
       {/* PRODECK MODE */}
-      {mode === 'prodeck' && (
+      {!introPhase && mode === 'prodeck' && (
         <div className="vk-card shadow-purple-200/50 border-purple-200">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
@@ -882,6 +1001,18 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
 
                   {/* Stats */}
                   <div className="flex-shrink-0 flex items-center gap-2 text-xs">
+                    {/* Group mode: show session streak */}
+                    {learningMode === 'groups' && sessionCardProgress[card.id] && (
+                      sessionCardProgress[card.id].graduated ? (
+                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-semibold">
+                          <Check className="w-3 h-3 inline -mt-0.5" /> Done
+                        </span>
+                      ) : sessionCardProgress[card.id].sessionStreak > 0 ? (
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-semibold">
+                          {sessionCardProgress[card.id].sessionStreak}/2
+                        </span>
+                      ) : null
+                    )}
                     {prog && (prog.timesCorrect > 0 || prog.timesIncorrect > 0) && (
                       <span className="text-slate-400">
                         <span className="text-green-600 font-medium">{prog.timesCorrect}</span>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import StudySession from '@/components/StudySession';
 import AuthButton from '@/components/AuthButton';
+import VokabLogo from '@/components/VokabLogo';
 
 export default function LearnPage() {
   return (
@@ -17,10 +18,7 @@ export default function LearnPage() {
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">vk</span>
-              </div>
-              <span className="font-semibold text-lg text-slate-800">vokab</span>
+              <VokabLogo variant="dark" size={28} />
             </Link>
             <AuthButton />
           </div>
