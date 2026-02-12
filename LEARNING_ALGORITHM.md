@@ -150,6 +150,24 @@ When a user clicks "I was right" (override):
 - Session: streak is set to 1 (conservative — still needs one more correct
   answer to graduate, rather than restoring the old streak).
 
+### Graduation Permanence
+
+Once a card graduates (streak >= `GRADUATION_STREAK`), it stays graduated for
+the rest of the session — even if it's later shown as a review card and
+answered incorrectly. This prevents the totalGraduated count from bouncing
+and ensures consistent progress tracking.
+
+### Reset Options
+
+Two reset levels are available via buttons below the study card:
+
+| Button         | What it resets                                              |
+|----------------|-------------------------------------------------------------|
+| **Reset Group**| Current group only — re-introduces all cards, resets streaks|
+| **Reset All**  | Entire session — rebuilds all groups, clears review pool    |
+
+Neither reset affects **Leitner box progress** (long-term data is preserved).
+
 ### UI Elements
 
 | Element              | Location                        | Description                                     |
@@ -160,6 +178,8 @@ When a user clicks "I was right" (override):
 | Total progress       | Progress bar right side         | "14 / 70 learned"                                |
 | Introduction card    | Replaces study card during intro| Shows both Q and A with "Got it" button          |
 | Card overview badges | Card list at bottom             | "Done" badge for graduated, "1/2" for streak    |
+| Reset Group button   | Below study card                | Resets current group only                        |
+| Reset All button     | Below study card                | Resets entire session                            |
 
 ### Persistence
 

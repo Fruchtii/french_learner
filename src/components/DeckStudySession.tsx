@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye, List, BookOpen, ChevronDown } from 'lucide-react';
+import { Check, X, Loader2, RotateCcw, Keyboard, Layers, Sparkles, Zap, ArrowLeftRight, Shuffle, Clock, Trophy, ArrowRight, ArrowLeft, Undo2, Eye, List, BookOpen, ChevronDown, RefreshCw, Trash2 } from 'lucide-react';
 import { useDeckStudyStore, type LearningMode } from '@/store/useDeckStudyStore';
 import { getSupabase } from '@/lib/supabase';
 import { diffAnswers } from '@/lib/validation';
@@ -62,6 +62,8 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
     markCardIntroduced,
     getGroupProgress,
     sessionCardProgress,
+    resetCurrentGroup,
+    resetAll,
   } = useDeckStudyStore();
 
   // Load deck and check auth on mount
@@ -931,15 +933,26 @@ export default function DeckStudySession({ deckId }: DeckStudySessionProps) {
         {mode === 'prodeck' && hasGraded && 'Press Space or Enter for next card'}
       </p>
 
-      {/* Restart Button */}
+      {/* Reset / Restart Buttons */}
       {sessionStats.total > 0 && (
-        <div className="mt-4 text-center">
+        <div className="mt-4 flex justify-center items-center gap-3">
+          {learningMode === 'groups' && groupProgress && (
+            <button
+              onClick={resetCurrentGroup}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+              title="Reset current group — re-introduce and re-test all cards in this group"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reset Group
+            </button>
+          )}
           <button
-            onClick={handleRestart}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+            onClick={resetAll}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+            title="Reset entire session — start over from group 1"
           >
-            <RotateCcw className="w-4 h-4" />
-            Restart Session
+            <Trash2 className="w-3.5 h-3.5" />
+            Reset All
           </button>
         </div>
       )}
