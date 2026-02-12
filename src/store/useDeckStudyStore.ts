@@ -130,6 +130,8 @@ interface DeckStudyState {
   setLearningMode: (mode: LearningMode) => void;
   markCardIntroduced: () => void;
   getGroupProgress: () => GroupProgress | null;
+  resetCurrentGroup: () => void;
+  resetAll: () => void;
 }
 
 // ============================================================================
@@ -475,15 +477,15 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
     if (learningMode === 'groups') {
       const sessionProg = sessionCardProgress[cardId];
       if (sessionProg) {
+        const newStreak = isCorrect ? sessionProg.sessionStreak + 1 : 0;
         const updated: SessionCardState = {
           ...sessionProg,
           attempts: sessionProg.attempts + 1,
-          sessionStreak: isCorrect ? sessionProg.sessionStreak + 1 : 0,
-          graduated: false,
+          sessionStreak: newStreak,
+          // Once graduated, stay graduated (even if a review card is answered
+          // wrong later — graduation means "proved knowledge in this session").
+          graduated: newStreak >= GRADUATION_STREAK || sessionProg.graduated,
         };
-        if (updated.sessionStreak >= GRADUATION_STREAK) {
-          updated.graduated = true;
-        }
         stateUpdate.sessionCardProgress = {
           ...sessionCardProgress,
           [cardId]: updated,
@@ -628,102 +630,115 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
       // Once all cards graduate, the group's cards move to the reviewPool
       // and the next group starts. ~20% of testing cards are randomly pulled
       // from the review pool, creating within-session spaced repetition.
+      //
+      // Uses a loop (not recursion) to advance through completed groups so
+      // all state changes are applied in a single set() call.
       // =====================================================================
 
-      const { groups, currentGroupIndex, sessionCardProgress, reviewPool } = state;
+      let { groups, currentGroupIndex, sessionCardProgress, reviewPool } = state;
 
       if (groups.length === 0) return;
 
-      // All groups complete
-      if (currentGroupIndex >= groups.length) {
-        set({ currentCard: null, introPhase: false });
-        return;
-      }
+      // Loop: advance past any fully-graduated groups until we find work
+      while (currentGroupIndex < groups.length) {
+        const currentGroup = groups[currentGroupIndex];
 
-      const currentGroup = groups[currentGroupIndex];
-
-      // --- Phase 1: Introduction ---
-      // Show un-introduced cards one by one (both sides visible)
-      const unintroduced = currentGroup.filter(id => !sessionCardProgress[id]?.introduced);
-      if (unintroduced.length > 0) {
-        const cardId = unintroduced[0];
-        const card = cards.find(c => c.id === cardId);
-        const newHistory = currentCard
-          ? [...state.cardHistory, currentCard]
-          : state.cardHistory;
-        set({ currentCard: card ?? null, introPhase: true, cardHistory: newHistory });
-        return;
-      }
-
-      // --- Phase 2: Testing ---
-      // Find cards that haven't graduated yet
-      const activeCards = currentGroup.filter(id => !sessionCardProgress[id]?.graduated);
-
-      if (activeCards.length === 0) {
-        // All cards in this group graduated → advance to next group
-        const newReviewPool = [...reviewPool, ...currentGroup];
-        const nextIndex = currentGroupIndex + 1;
-
-        if (nextIndex < groups.length) {
-          // Ensure session progress exists for the new group's cards
-          const newSessionProg = { ...sessionCardProgress };
-          for (const id of groups[nextIndex]) {
-            if (!newSessionProg[id]) {
-              newSessionProg[id] = { sessionStreak: 0, introduced: false, graduated: false, attempts: 0 };
-            }
-          }
+        // --- Phase 1: Introduction ---
+        // Show un-introduced cards one by one (both sides visible)
+        const unintroduced = currentGroup.filter(id => !sessionCardProgress[id]?.introduced);
+        if (unintroduced.length > 0) {
+          const cardId = unintroduced[0];
+          const card = cards.find(c => c.id === cardId);
+          const newHistory = currentCard
+            ? [...state.cardHistory, currentCard]
+            : state.cardHistory;
           set({
-            currentGroupIndex: nextIndex,
-            reviewPool: newReviewPool,
-            sessionCardProgress: newSessionProg,
+            currentCard: card ?? null,
+            introPhase: true,
+            cardHistory: newHistory,
+            currentGroupIndex,
+            reviewPool,
+            sessionCardProgress,
           });
-          // Recurse — will enter Phase 1 for the new group
-          get().selectNextCard();
-          return;
-        } else {
-          // All groups done — session complete
-          set({ currentCard: null, introPhase: false });
           return;
         }
+
+        // --- Phase 2: Testing ---
+        // Find cards that haven't graduated yet
+        const activeCards = currentGroup.filter(id => !sessionCardProgress[id]?.graduated);
+
+        if (activeCards.length > 0) {
+          // Pick a card for testing
+          const showReview = reviewPool.length > 0 && Math.random() < REVIEW_MIX_RATIO;
+          let selectedId: string;
+
+          if (showReview) {
+            // Pick random from review pool, avoiding current card
+            const reviewCandidates = reviewPool.filter(id => id !== currentCard?.id);
+            selectedId = reviewCandidates.length > 0
+              ? reviewCandidates[Math.floor(Math.random() * reviewCandidates.length)]
+              : reviewPool[Math.floor(Math.random() * reviewPool.length)];
+          } else {
+            // Pick from active cards, prioritising lowest session streak
+            const sorted = [...activeCards].sort((a, b) => {
+              const sa = sessionCardProgress[a]?.sessionStreak ?? 0;
+              const sb = sessionCardProgress[b]?.sessionStreak ?? 0;
+              return sa - sb;
+            });
+
+            // Avoid showing the same card back-to-back
+            const candidates = sorted.length > 1
+              ? sorted.filter(id => id !== currentCard?.id)
+              : sorted;
+
+            // Pick randomly from the lowest-streak tier
+            const topStreak = sessionCardProgress[candidates[0]]?.sessionStreak ?? 0;
+            const topCandidates = candidates.filter(id =>
+              (sessionCardProgress[id]?.sessionStreak ?? 0) === topStreak
+            );
+
+            selectedId = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+          }
+
+          const card = cards.find(c => c.id === selectedId);
+          const newHistory = currentCard
+            ? [...state.cardHistory, currentCard]
+            : state.cardHistory;
+          set({
+            currentCard: card ?? null,
+            introPhase: false,
+            cardHistory: newHistory,
+            currentGroupIndex,
+            reviewPool,
+            sessionCardProgress,
+          });
+          return;
+        }
+
+        // All cards in this group graduated → advance to next group
+        reviewPool = [...reviewPool, ...currentGroup];
+        currentGroupIndex++;
+
+        // Ensure session progress exists for the new group's cards
+        if (currentGroupIndex < groups.length) {
+          sessionCardProgress = { ...sessionCardProgress };
+          for (const id of groups[currentGroupIndex]) {
+            if (!sessionCardProgress[id]) {
+              sessionCardProgress[id] = { sessionStreak: 0, introduced: false, graduated: false, attempts: 0 };
+            }
+          }
+        }
+        // Loop continues — will enter Phase 1 for the new group
       }
 
-      // Decide whether to show a review card from a previous group (~20%)
-      const showReview = reviewPool.length > 0 && Math.random() < REVIEW_MIX_RATIO;
-      let selectedId: string;
-
-      if (showReview) {
-        // Pick random from review pool, avoiding current card
-        const reviewCandidates = reviewPool.filter(id => id !== currentCard?.id);
-        selectedId = reviewCandidates.length > 0
-          ? reviewCandidates[Math.floor(Math.random() * reviewCandidates.length)]
-          : reviewPool[Math.floor(Math.random() * reviewPool.length)];
-      } else {
-        // Pick from active cards, prioritising lowest session streak
-        const sorted = [...activeCards].sort((a, b) => {
-          const sa = sessionCardProgress[a]?.sessionStreak ?? 0;
-          const sb = sessionCardProgress[b]?.sessionStreak ?? 0;
-          return sa - sb;
-        });
-
-        // Avoid showing the same card back-to-back
-        const candidates = sorted.length > 1
-          ? sorted.filter(id => id !== currentCard?.id)
-          : sorted;
-
-        // Pick randomly from the lowest-streak tier
-        const topStreak = sessionCardProgress[candidates[0]]?.sessionStreak ?? 0;
-        const topCandidates = candidates.filter(id =>
-          (sessionCardProgress[id]?.sessionStreak ?? 0) === topStreak
-        );
-
-        selectedId = topCandidates[Math.floor(Math.random() * topCandidates.length)];
-      }
-
-      const card = cards.find(c => c.id === selectedId);
-      const newHistory = currentCard
-        ? [...state.cardHistory, currentCard]
-        : state.cardHistory;
-      set({ currentCard: card ?? null, introPhase: false, cardHistory: newHistory });
+      // All groups complete — session done
+      set({
+        currentCard: null,
+        introPhase: false,
+        currentGroupIndex,
+        reviewPool,
+        sessionCardProgress,
+      });
 
     } else {
       // =====================================================================
@@ -862,7 +877,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
   },
 
   // --------------------------------------------------------------------------
-  // RESTART
+  // RESTART / RESET
   // --------------------------------------------------------------------------
 
   /**
@@ -881,6 +896,64 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => ({
 
     if (learningMode === 'groups') {
       set(buildGroupState(newCards, cardProgress));
+    }
+
+    get().selectNextCard();
+  },
+
+  /**
+   * Reset just the current group — re-introduce all cards and reset streaks
+   * within this group. Other groups and the review pool are unaffected.
+   */
+  resetCurrentGroup: () => {
+    const { groups, currentGroupIndex, sessionCardProgress } = get();
+    if (groups.length === 0 || currentGroupIndex >= groups.length) return;
+
+    const currentGroup = groups[currentGroupIndex];
+    const newSessionProg = { ...sessionCardProgress };
+
+    for (const id of currentGroup) {
+      newSessionProg[id] = {
+        sessionStreak: 0,
+        introduced: false,
+        graduated: false,
+        attempts: 0,
+      };
+    }
+
+    set({
+      sessionCardProgress: newSessionProg,
+      introPhase: false,
+      cardHistory: [],
+    });
+
+    get().selectNextCard();
+  },
+
+  /**
+   * Reset the entire session — rebuild all groups from scratch, clear the
+   * review pool, and reset session stats. Leitner progress is NOT affected.
+   */
+  resetAll: () => {
+    const { originalCards, shuffleEnabled, learningMode, cardProgress } = get();
+    const newCards = shuffleEnabled ? shuffleArray(originalCards) : [...originalCards];
+
+    set({
+      sessionStats: { correct: 0, incorrect: 0, total: 0 },
+      cards: newCards,
+      cardHistory: [],
+    });
+
+    if (learningMode === 'groups') {
+      set(buildGroupState(newCards, cardProgress));
+    } else {
+      set({
+        groups: [],
+        currentGroupIndex: 0,
+        sessionCardProgress: {},
+        reviewPool: [],
+        introPhase: false,
+      });
     }
 
     get().selectNextCard();
