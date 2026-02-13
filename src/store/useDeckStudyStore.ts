@@ -617,9 +617,9 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => {
   // --------------------------------------------------------------------------
 
   /**
-   * User says "I was right" — fully undo the incorrect answer and apply a
-   * correct result instead. Uses preSubmitBox to restore the box level to
-   * what it was *before* the wrong answer was recorded.
+   * User says "I was right" — undo the incorrect answer. Restores the box
+   * to its pre-submit level (no promotion, just damage-undone) and reverts
+   * the timesIncorrect/timesCorrect counts.
    */
   overrideResult: (cardId: string) => {
     const { cardProgress, sessionStats, deckId, userId, learningMode, sessionCardProgress, preSubmitBox } = get();
@@ -627,17 +627,18 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => {
     if (!card || !deckId) return;
 
     const now = Date.now();
-    // Restore the box to what it was before the incorrect submit, then +1
+    // Restore the box to what it was before the incorrect submit (no +1)
     const restoredBox = preSubmitBox ?? card.box;
-    const newBox = Math.min(restoredBox + 1, MAX_BOX);
-    const nextReviewDate = now + BOX_INTERVALS[newBox as keyof typeof BOX_INTERVALS];
+    const nextReviewDate = now + BOX_INTERVALS[restoredBox as keyof typeof BOX_INTERVALS];
 
     const updatedCard: DeckCardProgress = {
       ...card,
-      box: newBox,
+      box: restoredBox,
       nextReviewDate,
       lastReviewed: now,
-      timesCorrect: card.timesCorrect + 1,
+      // Undo the incorrect: remove the timesIncorrect added by submitResult,
+      // but don't add timesCorrect — the override is neutral, not a reward.
+      timesCorrect: card.timesCorrect,
       timesIncorrect: Math.max(0, card.timesIncorrect - 1),
     };
 
@@ -650,15 +651,14 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => {
       cardProgress: updatedProgress,
       preSubmitBox: null,
       sessionStats: {
-        correct: sessionStats.correct + 1,
+        // Undo the incorrect that submitResult counted — neutral, not +1 correct
+        correct: sessionStats.correct,
         incorrect: Math.max(0, sessionStats.incorrect - 1),
-        total: sessionStats.total,
+        total: Math.max(0, sessionStats.total - 1),
       },
     };
 
     // Group mode: undo the streak reset from the incorrect answer.
-    // The incorrect submit set streak to 0. We restore it to pre-submit + 1.
-    // (submitResult set streak = 0 and attempts++, so we undo that.)
     if (learningMode === 'groups') {
       const sessionProg = sessionCardProgress[cardId];
       if (sessionProg) {
@@ -691,7 +691,7 @@ export const useDeckStudyStore = create<DeckStudyState>((set, get) => {
         .upsert({
           user_id: userId,
           card_id: cardId,
-          box: newBox,
+          box: restoredBox,
           next_review: new Date(nextReviewDate).toISOString(),
           last_reviewed: new Date(now).toISOString(),
           times_correct: updatedCard.timesCorrect,
