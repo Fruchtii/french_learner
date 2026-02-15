@@ -32,7 +32,7 @@ determines when it next comes up for review.
 
 - **Correct**: `box = min(box + 1, 3)`, schedule at `now + interval[newBox]`.
 - **Incorrect**: `box = 0`, schedule immediately.
-- **Override ("I was right")**: treat as correct, box moves up by 1.
+- **Override ("I was right")**: box restored to pre-submit level (no promotion).
 
 ### Strengths
 
@@ -120,7 +120,7 @@ During Phase 2 (testing):
 
 ### Session Progress Tracking
 
-Each card has a `SessionCardState` (session-only, not persisted):
+Each card has a `SessionCardState` (persisted to `localStorage` per-deck):
 
 ```typescript
 interface SessionCardState {
@@ -143,12 +143,17 @@ Both systems run in parallel:
 - When groups are rebuilt (on restart or next visit), the Leitner progress
   determines group ordering — previously-mastered cards appear in later groups.
 
-### Override Handling
+### Override Handling ("I was right")
 
-When a user clicks "I was right" (override):
-- Leitner: box moves up by 1 (same as classic).
-- Session: streak is set to 1 (conservative — still needs one more correct
-  answer to graduate, rather than restoring the old streak).
+The override is strictly a **damage-undo**, not a reward:
+- **Leitner box**: restored to its pre-submit level (no promotion).
+  Example: box 2 → wrong (box 0) → override → box 2 (not 3).
+- **Counts**: `timesIncorrect` is decremented, `timesCorrect` unchanged.
+- **Session stats**: the incorrect is removed and the attempt is uncounted
+  (the answer is treated as if it never happened).
+- **Group mode**: streak is set to 1 (not enough to graduate, since
+  `GRADUATION_STREAK = 2`). You cannot graduate a card purely through
+  overrides — at least one genuine correct answer is always required.
 
 ### Graduation Permanence
 

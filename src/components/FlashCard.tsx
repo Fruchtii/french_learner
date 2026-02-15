@@ -106,8 +106,8 @@ export default function FlashCard({
       {/* Main Card */}
       <div
         className={`
-          bg-white rounded-2xl shadow-xl border overflow-hidden transition-all duration-300
-          ${cardState === 'question' ? 'shadow-slate-400/30 border-slate-300 cursor-pointer hover:shadow-slate-500/40' : 'shadow-slate-300/50 border-slate-200'}
+          bg-white dark:bg-slate-900 rounded-2xl shadow-xl border overflow-hidden transition-all duration-300
+          ${cardState === 'question' ? 'shadow-slate-400/30 dark:shadow-slate-900/50 border-slate-300 dark:border-slate-600 cursor-pointer hover:shadow-slate-500/40' : 'shadow-slate-300/50 dark:shadow-slate-900/50 border-slate-200 dark:border-slate-700'}
         `}
         onClick={cardState === 'question' ? handleReveal : undefined}
       >
@@ -142,17 +142,17 @@ export default function FlashCard({
         <div className="p-6">
           {/* Verb Display */}
           <div className="text-center mb-5">
-            <h2 className="text-4xl font-bold text-slate-900 mb-2">
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
               {verb.infinitive}
             </h2>
-            <p className="text-slate-600 text-lg">{verb.english}</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">{verb.english}</p>
           </div>
 
           {/* Pronoun Prompt */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 mb-5 border border-slate-200">
-            <p className="text-center text-xl text-slate-800">
-              <span className="text-slate-600">Conjugate for</span>{' '}
-              <span className="font-bold text-slate-900 text-2xl">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800 rounded-xl p-5 mb-5 border border-slate-200 dark:border-slate-700">
+            <p className="text-center text-xl text-slate-800 dark:text-slate-100">
+              <span className="text-slate-600 dark:text-slate-400">Conjugate for</span>{' '}
+              <span className="font-bold text-slate-900 dark:text-slate-100 text-2xl">
                 {pronouns[pronoun]}
               </span>
             </p>
@@ -163,13 +163,13 @@ export default function FlashCard({
             <div className="animate-fadeIn">
               <button
                 onClick={handleReveal}
-                className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
+                className="w-full py-8 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 transition-all flex flex-col items-center justify-center gap-3 group"
               >
-                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                  <Eye className="w-6 h-6 text-slate-600" />
+                <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center group-hover:bg-slate-300 dark:group-hover:bg-slate-600 transition-colors">
+                  <Eye className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
-                <span className="text-slate-600 font-medium">Tap to reveal</span>
-                <span className="text-slate-400 text-sm">or press Space</span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">Tap to reveal</span>
+                <span className="text-slate-400 dark:text-slate-500 text-sm">or press Space</span>
               </button>
             </div>
           )}
@@ -191,12 +191,12 @@ export default function FlashCard({
           <div className="px-6 pb-6">
             {!hasGraded ? (
               <div className="animate-fadeIn">
-                <p className="text-center text-slate-500 text-sm mb-3">Did you know the answer?</p>
+                <p className="text-center text-slate-500 dark:text-slate-400 text-sm mb-3">Did you know the answer?</p>
                 <div className="flex gap-3">
                   {canGoBack && onBack && (
                     <button
                       onClick={onBack}
-                      className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                      className="px-3 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
                       title="Go back to previous card"
                     >
                       <ArrowLeft className="w-4 h-4" />
@@ -204,14 +204,14 @@ export default function FlashCard({
                   )}
                   <button
                     onClick={() => handleGrade(false)}
-                    className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 border-2 border-red-200 dark:border-red-700 hover:border-red-300 dark:hover:border-red-600 text-red-700 dark:text-red-400 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     <X className="w-5 h-5" />
                     I forgot
                   </button>
                   <button
                     onClick={() => handleGrade(true)}
-                    className="flex-1 py-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-300 text-green-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 text-green-700 dark:text-green-400 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
                   >
                     <Check className="w-5 h-5" />
                     I knew it
@@ -223,7 +223,7 @@ export default function FlashCard({
                 {canGoBack && onBack && (
                   <button
                     onClick={onBack}
-                    className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                    className="px-3 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
                     title="Go back to previous card"
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -243,7 +243,7 @@ export default function FlashCard({
       </div>
 
       {/* Keyboard hints */}
-      <p className="text-center text-slate-400 text-xs mt-3">
+      <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-3">
         {cardState === 'question'
           ? 'Press Space to reveal'
           : !hasGraded

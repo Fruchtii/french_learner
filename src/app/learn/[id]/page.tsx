@@ -7,6 +7,7 @@ import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import DeckStudySession from '@/components/DeckStudySession';
 import AuthButton from '@/components/AuthButton';
 import VokabLogo from '@/components/VokabLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { getSupabase, type Deck } from '@/lib/supabase';
 
 export default function LearnDeckPage() {
@@ -58,10 +59,10 @@ export default function LearnDeckPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-        <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
+        <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+            <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm">Dashboard</span>
             </Link>
@@ -69,6 +70,7 @@ export default function LearnDeckPage() {
               <Link href="/" className="flex items-center gap-2">
                 <VokabLogo variant="dark" size={28} />
               </Link>
+              <ThemeToggle />
               <AuthButton />
             </div>
           </div>
@@ -84,10 +86,10 @@ export default function LearnDeckPage() {
   // Error state (404 or other errors)
   if (error || !deck) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-        <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
+        <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+            <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm">Dashboard</span>
             </Link>
@@ -95,6 +97,7 @@ export default function LearnDeckPage() {
               <Link href="/" className="flex items-center gap-2">
                 <VokabLogo variant="dark" size={28} />
               </Link>
+              <ThemeToggle />
               <AuthButton />
             </div>
           </div>
@@ -102,13 +105,13 @@ export default function LearnDeckPage() {
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-3">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               Deck Not Found
             </h1>
-            <p className="text-slate-600 mb-8">
+            <p className="text-slate-600 dark:text-slate-400 mb-8">
               {error === 'Deck not found'
                 ? "This deck doesn't exist or has been deleted."
                 : "There was an error loading this deck."}
@@ -128,11 +131,11 @@ export default function LearnDeckPage() {
 
   // Success state - render the study session
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-          <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+          <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Dashboard</span>
           </Link>
@@ -140,6 +143,7 @@ export default function LearnDeckPage() {
             <Link href="/" className="flex items-center gap-2">
               <VokabLogo variant="dark" size={28} />
             </Link>
+            <ThemeToggle />
             <AuthButton />
           </div>
         </div>
@@ -149,11 +153,11 @@ export default function LearnDeckPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-4">
         {/* Header */}
         <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">
             {deck.title}
           </h1>
           {deck.description && (
-            <p className="text-slate-500 text-sm max-w-md">
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md">
               {deck.description}
             </p>
           )}

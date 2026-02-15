@@ -205,10 +205,10 @@ export default function AdminDashboard() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-600 text-sm">Checking admin access...</p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">Checking admin access...</p>
         </div>
       </div>
     );
@@ -217,15 +217,15 @@ export default function AdminDashboard() {
   // 403 Forbidden - Not an admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
         <div className="max-w-md text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-10 h-10 text-red-600" />
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-red-600 dark:text-red-400" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
             403 Forbidden
           </h1>
-          <p className="text-slate-600 mb-8">
+          <p className="text-slate-600 dark:text-slate-400 mb-8">
             You do not have permission to access the admin dashboard.
           </p>
           <Link
@@ -242,9 +242,9 @@ export default function AdminDashboard() {
 
   // Admin Dashboard UI
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -252,22 +252,22 @@ export default function AdminDashboard() {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-                <p className="text-sm text-slate-500">Platform Management</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Admin Dashboard</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Platform Management</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => loadDecks()}
                 disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Dashboard
@@ -281,19 +281,19 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <p className="text-sm text-slate-600 mb-1">Total Decks</p>
-            <p className="text-3xl font-bold text-slate-900">{decks.length}</p>
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Decks</p>
+            <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{decks.length}</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <p className="text-sm text-slate-600 mb-1">Public Decks</p>
-            <p className="text-3xl font-bold text-green-600">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Public Decks</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
               {decks.filter(d => d.is_public).length}
             </p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <p className="text-sm text-slate-600 mb-1">Private Decks</p>
-            <p className="text-3xl font-bold text-slate-600">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Private Decks</p>
+            <p className="text-3xl font-bold text-slate-600 dark:text-slate-400">
               {decks.filter(d => !d.is_public).length}
             </p>
           </div>
@@ -301,63 +301,63 @@ export default function AdminDashboard() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-red-900 mb-1">Error</h3>
-              <p className="text-sm text-red-700">{error}</p>
+              <h3 className="font-semibold text-red-900 dark:text-red-300 mb-1">Error</h3>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           </div>
         )}
 
         {/* Decks Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900">All Decks</h2>
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">All Decks</h2>
           </div>
 
           {decks.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
               <p>No decks found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
+                <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Deck
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Owner
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Cards
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                   {decks.map(deck => (
-                    <tr key={deck.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={deck.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-4">
                         <div>
                           <Link
                             href={`/learn/${deck.id}`}
-                            className="font-medium text-slate-900 hover:text-blue-600 transition-colors"
+                            className="font-medium text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           >
                             {deck.title}
                           </Link>
                           {deck.description && (
-                            <p className="text-sm text-slate-500 mt-1 line-clamp-1">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
                               {deck.description}
                             </p>
                           )}
@@ -365,23 +365,23 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-sm font-medium text-slate-900">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {deck.owner_name || deck.owner_email}
                           </p>
                           {deck.owner_name && (
-                            <p className="text-xs text-slate-500">{deck.owner_email}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{deck.owner_email}</p>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{deck.card_count}</span>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{deck.card_count}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                             deck.is_public
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-slate-100 text-slate-700'
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                           }`}
                         >
                           {deck.is_public ? (
@@ -398,7 +398,7 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
                           {new Date(deck.created_at).toLocaleDateString()}
                         </span>
                       </td>
@@ -406,7 +406,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/dashboard/${deck.id}/edit`}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                             title="Edit Deck"
                           >
                             <Pencil className="w-4 h-4" />
@@ -415,8 +415,8 @@ export default function AdminDashboard() {
                             onClick={() => handleTogglePublic(deck.id, deck.is_public, deck.title)}
                             className={`p-2 rounded-lg transition-colors ${
                               deck.is_public
-                                ? 'text-slate-600 hover:bg-slate-100'
-                                : 'text-green-600 hover:bg-green-50'
+                                ? 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30'
                             }`}
                             title={deck.is_public ? 'Make Private' : 'Make Public'}
                           >
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
                           </button>
                           <button
                             onClick={() => handleDeleteDeck(deck.id, deck.title)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="Delete Deck"
                           >
                             <Trash2 className="w-4 h-4" />
