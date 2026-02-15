@@ -133,7 +133,7 @@ export default function ProDeck({
   return (
     <div className="w-full outline-none">
       {/* Main Card */}
-      <div className="bg-white rounded-2xl shadow-xl shadow-purple-200/50 border border-purple-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-purple-200/50 dark:shadow-purple-900/50 border border-purple-200 dark:border-purple-700 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
           <div className="flex justify-between items-center text-white">
@@ -163,10 +163,10 @@ export default function ProDeck({
         <div className="p-5">
           {/* Verb Display */}
           <div className="text-center mb-4">
-            <h2 className="text-4xl font-bold text-slate-900 mb-1">
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-1">
               {verb.infinitive}
             </h2>
-            <p className="text-slate-600 text-lg">{verb.english}</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">{verb.english}</p>
           </div>
 
           {/* Progress Indicator */}
@@ -175,7 +175,7 @@ export default function ProDeck({
               <div
                 key={tense}
                 className={`w-3 h-3 rounded-full transition-all ${
-                  i < revealStep ? 'bg-purple-500' : 'bg-slate-200'
+                  i < revealStep ? 'bg-purple-500' : 'bg-slate-200 dark:bg-slate-700'
                 }`}
               />
             ))}
@@ -184,20 +184,20 @@ export default function ProDeck({
           {/* State: Waiting (Nothing revealed) */}
           {state === 'waiting' && (
             <div className="animate-fadeIn">
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 mb-4 border border-purple-100">
-                <p className="text-center text-slate-600">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-xl p-4 mb-4 border border-purple-100 dark:border-purple-800">
+                <p className="text-center text-slate-600 dark:text-slate-400">
                   Can you conjugate all 4 tenses?
                 </p>
               </div>
               <button
                 onClick={handleRevealNext}
-                className="w-full py-8 bg-slate-50 hover:bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 transition-all flex flex-col items-center justify-center gap-3 group"
+                className="w-full py-8 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 transition-all flex flex-col items-center justify-center gap-3 group"
               >
-                <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/70 transition-colors">
                   <Eye className="w-7 h-7 text-purple-600" />
                 </div>
-                <span className="text-slate-600 font-medium text-lg">Tap to reveal {tenseNames.present}</span>
-                <span className="text-slate-400 text-sm">or press Space</span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium text-lg">Tap to reveal {tenseNames.present}</span>
+                <span className="text-slate-400 dark:text-slate-500 text-sm">or press Space</span>
               </button>
             </div>
           )}
@@ -226,10 +226,10 @@ export default function ProDeck({
                         {conjugations.map(({ pronoun, label, value }) => (
                           <div
                             key={pronoun}
-                            className="flex justify-between items-center px-2 py-1.5 bg-white/80 rounded-md text-sm"
+                            className="flex justify-between items-center px-2 py-1.5 bg-white/80 dark:bg-slate-800/80 rounded-md text-sm"
                           >
                             <span className={`${colors.text} font-medium text-xs`}>{label}</span>
-                            <span className="font-mono font-bold text-slate-900">{value}</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{value}</span>
                           </div>
                         ))}
                       </div>
@@ -242,7 +242,7 @@ export default function ProDeck({
               {state === 'revealing' && nextTenseName && (
                 <button
                   onClick={handleRevealNext}
-                  className="w-full py-4 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 border border-purple-200"
+                  className="w-full py-4 bg-purple-100 dark:bg-purple-900/50 hover:bg-purple-200 dark:hover:bg-purple-900/70 text-purple-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 border border-purple-200 dark:border-purple-700"
                 >
                   Reveal {nextTenseName}
                   <ChevronRight className="w-5 h-5" />
@@ -255,12 +255,12 @@ export default function ProDeck({
         {/* Grading Section - Only when all tenses revealed */}
         {state === 'grading' && (
           <div className="px-5 pb-5 animate-fadeIn">
-            <p className="text-center text-slate-500 text-sm mb-3">How well did you know all the tenses?</p>
+            <p className="text-center text-slate-500 dark:text-slate-400 text-sm mb-3">How well did you know all the tenses?</p>
             <div className="flex gap-3">
               {canGoBack && onBack && (
                 <button
                   onClick={onBack}
-                  className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                  className="px-3 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
                   title="Go back to previous card"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -268,14 +268,14 @@ export default function ProDeck({
               )}
               <button
                 onClick={() => handleGrade(false)}
-                className="flex-1 py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 border-2 border-red-200 dark:border-red-700 hover:border-red-300 dark:hover:border-red-600 text-red-700 dark:text-red-400 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
                 <X className="w-5 h-5" />
                 I struggled
               </button>
               <button
                 onClick={() => handleGrade(true)}
-                className="flex-1 py-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-300 text-green-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 text-green-700 dark:text-green-400 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
                 <Check className="w-5 h-5" />
                 I knew it all
@@ -290,7 +290,7 @@ export default function ProDeck({
             {canGoBack && onBack && (
               <button
                 onClick={onBack}
-                className="px-3 py-4 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors flex items-center justify-center"
+                className="px-3 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
                 title="Go back to previous card"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -308,7 +308,7 @@ export default function ProDeck({
       </div>
 
       {/* Keyboard hints */}
-      <p className="text-center text-slate-400 text-xs mt-3">
+      <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-3">
         {state === 'waiting' && 'Press Space to reveal'}
         {state === 'revealing' && 'Press Space to reveal next tense'}
         {state === 'grading' && '1 or ← = struggled • 2 or → = knew it'}

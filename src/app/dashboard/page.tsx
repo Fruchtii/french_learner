@@ -6,6 +6,7 @@ import { BookOpen, Plus, ArrowRight, Lock, Globe, Loader2, Pencil, Sparkles, Tra
 import { getSupabase, type Deck } from '@/lib/supabase';
 import AuthButton from '@/components/AuthButton';
 import VokabLogo from '@/components/VokabLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import type { Session } from '@supabase/supabase-js';
 
 interface DeckWithCount extends Deck {
@@ -131,13 +132,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-        <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
+        <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/" className="flex items-center gap-2">
               <VokabLogo variant="dark" size={28} />
             </Link>
-            <AuthButton />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <AuthButton />
+            </div>
           </div>
         </nav>
 
@@ -150,25 +154,28 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-        <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
+        <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/" className="flex items-center gap-2">
               <VokabLogo variant="dark" size={28} />
             </Link>
-            <AuthButton />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <AuthButton />
+            </div>
           </div>
         </nav>
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 pt-16">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Lock className="w-8 h-8 text-blue-600" />
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-3">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
               Sign in to continue
             </h1>
-            <p className="text-slate-600 mb-8">
+            <p className="text-slate-600 dark:text-slate-400 mb-8">
               Create an account or sign in to access your decks and track your progress.
             </p>
             <AuthButton />
@@ -179,14 +186,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
             <VokabLogo variant="dark" size={28} />
           </Link>
-          <AuthButton />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AuthButton />
+          </div>
         </div>
       </nav>
 
@@ -195,10 +205,10 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
               My Decks
             </h1>
-            <p className="text-slate-600">
+            <p className="text-slate-600 dark:text-slate-400">
               Choose a deck to start learning, or create a new one.
             </p>
           </div>
@@ -207,7 +217,7 @@ export default function DashboardPage() {
           <div className="mb-8">
             <Link
               href="/dashboard/create"
-              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               <Plus className="w-5 h-5" />
               Create New Deck
@@ -258,14 +268,14 @@ export default function DashboardPage() {
 
           {/* Decks Grid */}
           {decks.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 No decks yet
               </h3>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
                 Create your first deck to start learning!
               </p>
               <Link
@@ -281,25 +291,25 @@ export default function DashboardPage() {
               {decks.map((deck) => (
                 <div
                   key={deck.id}
-                  className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all overflow-hidden relative"
+                  className="group bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all overflow-hidden relative"
                 >
                   {/* Action Buttons (Top Right) */}
                   <div className="absolute top-4 right-4 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link
                       href={`/dashboard/${deck.id}/edit`}
-                      className="p-2 bg-white rounded-lg border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all shadow-sm"
+                      className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all shadow-sm"
                       onClick={(e) => e.stopPropagation()}
                       title="Edit deck"
                     >
-                      <Pencil className="w-4 h-4 text-slate-600 hover:text-blue-600" />
+                      <Pencil className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-blue-600" />
                     </Link>
                     <button
                       onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteDeck(deck.id); }}
                       disabled={deletingDeckId === deck.id}
-                      className="p-2 bg-white rounded-lg border border-slate-200 hover:border-red-400 hover:bg-red-50 transition-all shadow-sm disabled:opacity-50"
+                      className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all shadow-sm disabled:opacity-50"
                       title="Delete deck"
                     >
-                      <Trash2 className="w-4 h-4 text-slate-600 hover:text-red-600" />
+                      <Trash2 className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-red-600" />
                     </button>
                   </div>
 
@@ -311,7 +321,7 @@ export default function DashboardPage() {
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                           <BookOpen className="w-6 h-6 text-white" />
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                           {deck.is_public ? (
                             <>
                               <Globe className="w-3 h-3" />
@@ -326,24 +336,24 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {deck.title}
                       </h3>
 
                       {deck.description && (
-                        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
                           {deck.description}
                         </p>
                       )}
 
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm text-slate-500">
-                          <span className="font-semibold text-slate-700">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
                             {deck.card_count || 0}
                           </span>{' '}
                           cards
                         </div>
-                        <div className="flex items-center gap-1 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
                           <span className="text-sm font-medium">Study</span>
                           <ArrowRight className="w-4 h-4" />
                         </div>
@@ -352,15 +362,15 @@ export default function DashboardPage() {
                       {/* Progress indicators */}
                       {(deck.card_count || 0) > 0 && (deck.mastered_count! > 0 || deck.learning_count! > 0) && (
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-green-600 font-medium">{deck.mastered_count} mastered</span>
-                          <span className="text-slate-300">&middot;</span>
-                          <span className="text-amber-600 font-medium">{deck.learning_count} learning</span>
+                          <span className="text-green-600 dark:text-green-400 font-medium">{deck.mastered_count} mastered</span>
+                          <span className="text-slate-300 dark:text-slate-600">&middot;</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-medium">{deck.learning_count} learning</span>
                         </div>
                       )}
                     </div>
 
                     {/* Progress Bar (real progress, not just hover animation) */}
-                    <div className="h-1.5 bg-slate-100">
+                    <div className="h-1.5 bg-slate-100 dark:bg-slate-800">
                       {(deck.card_count || 0) > 0 ? (
                         <div className="h-full flex">
                           <div

@@ -131,7 +131,7 @@ export default function TypingCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
         <div className="flex justify-between items-center text-white">
@@ -163,17 +163,17 @@ export default function TypingCard({
       <div className="p-5">
         {/* Verb Display */}
         <div className="text-center mb-4">
-          <h2 className="text-3xl font-bold text-slate-900 mb-1">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
             {verb.infinitive}
           </h2>
-          <p className="text-slate-600">{verb.english}</p>
+          <p className="text-slate-600 dark:text-slate-400">{verb.english}</p>
         </div>
 
         {/* Pronoun Prompt */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
-          <p className="text-center text-lg text-slate-800">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-4 mb-4 border border-blue-100 dark:border-blue-800">
+          <p className="text-center text-lg text-slate-800 dark:text-slate-100">
             Conjugate for:{' '}
-            <span className="font-bold text-slate-900 text-xl">
+            <span className="font-bold text-slate-900 dark:text-slate-100 text-xl">
               {pronouns[pronoun]}
             </span>
           </p>
@@ -186,7 +186,7 @@ export default function TypingCard({
               key={char}
               onClick={() => handleAccentClick(char)}
               disabled={quizState !== 'answering'}
-              className="w-9 h-9 bg-slate-200 hover:bg-slate-300 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-base font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-9 h-9 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-base font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {char}
             </button>
@@ -213,7 +213,7 @@ export default function TypingCard({
         {/* Feedback Messages */}
         {quizState === 'correct' && (
           <div className="flex items-center justify-center gap-2 text-green-600 mb-4 animate-fadeIn">
-            <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+            <div className="w-7 h-7 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
               <Check className="w-4 h-4" />
             </div>
             <span className="font-semibold">
@@ -225,39 +225,39 @@ export default function TypingCard({
         {quizState === 'incorrect' && (
           <div className="text-center mb-4 animate-fadeIn">
             <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
-              <div className="w-7 h-7 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-7 h-7 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
                 <X className="w-4 h-4" />
               </div>
               <span className="font-semibold">Not quite! Back to Box 0</span>
             </div>
             {/* Diff: show user's answer with wrong chars highlighted */}
             <div className="space-y-1.5 mt-2">
-              <p className="text-slate-500 text-xs">Your answer:</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs">Your answer:</p>
               <p className="font-mono text-base tracking-wide">
                 {diffAnswers(userInput, correctAnswer).userDiff.map((seg, i) => (
                   <span
                     key={i}
                     className={
                       seg.type === 'correct'
-                        ? 'text-slate-900'
+                        ? 'text-slate-900 dark:text-slate-100'
                         : seg.type === 'wrong'
-                        ? 'text-red-600 bg-red-100 rounded px-0.5'
-                        : 'text-red-400 bg-red-50 rounded px-0.5 line-through'
+                        ? 'text-red-600 bg-red-100 dark:bg-red-900/50 rounded px-0.5'
+                        : 'text-red-400 bg-red-50 dark:bg-red-900/30 rounded px-0.5 line-through'
                     }
                   >
                     {seg.char}
                   </span>
                 ))}
               </p>
-              <p className="text-slate-500 text-xs mt-1">Correct answer:</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Correct answer:</p>
               <p className="font-mono text-base tracking-wide">
                 {diffAnswers(userInput, correctAnswer).correctDiff.map((seg, i) => (
                   <span
                     key={i}
                     className={
                       seg.type === 'correct'
-                        ? 'text-slate-900'
-                        : 'text-green-600 bg-green-100 rounded px-0.5'
+                        ? 'text-slate-900 dark:text-slate-100'
+                        : 'text-green-600 bg-green-100 dark:bg-green-900/50 rounded px-0.5'
                     }
                   >
                     {seg.char}
@@ -274,7 +274,7 @@ export default function TypingCard({
             {canGoBack && onBack && (
               <button
                 onClick={onBack}
-                className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
+                className="px-3 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
                 title="Go back to previous card"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -293,7 +293,7 @@ export default function TypingCard({
             {canGoBack && onBack && (
               <button
                 onClick={onBack}
-                className="px-3 py-3 bg-slate-100 text-slate-600 rounded-xl font-semibold hover:bg-slate-200 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
+                className="px-3 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-4 focus:ring-slate-500/25 flex items-center justify-center"
                 title="Go back to previous card"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -302,7 +302,7 @@ export default function TypingCard({
             {quizState === 'incorrect' && (
               <button
                 onClick={handleOverride}
-                className="flex-1 py-3 bg-amber-100 text-amber-700 rounded-xl font-semibold hover:bg-amber-200 transition-colors focus:outline-none focus:ring-4 focus:ring-amber-500/25 flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded-xl font-semibold hover:bg-amber-200 dark:hover:bg-amber-900/70 transition-colors focus:outline-none focus:ring-4 focus:ring-amber-500/25 flex items-center justify-center gap-2"
               >
                 <Undo2 className="w-4 h-4" />
                 I was right
@@ -321,7 +321,7 @@ export default function TypingCard({
 
       {/* Keyboard hints */}
       <div className="px-5 pb-4">
-        <p className="text-center text-slate-400 text-xs">
+        <p className="text-center text-slate-400 dark:text-slate-500 text-xs">
           {quizState === 'answering'
             ? 'Press Enter to check answer'
             : 'Press Space or Enter to continue'}

@@ -462,20 +462,20 @@ Check the browser console for more details.`);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900 pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Dashboard</span>
@@ -503,7 +503,7 @@ Check the browser console for more details.`);
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
           {deckId ? 'Edit Deck' : 'Create New Deck'}
         </h1>
         {isAdmin && deckId && (
@@ -515,12 +515,12 @@ Check the browser console for more details.`);
         {!isAdmin && deckId && <div className="mb-8" />}
 
         {/* Deck Metadata */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Deck Information</h2>
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Deck Information</h2>
 
           {/* Title */}
           <div className="mb-4">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -529,13 +529,13 @@ Check the browser console for more details.`);
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., French Irregular Verbs"
-              className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
+              className="w-full px-4 py-2.5 text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Description */}
           <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description (optional)
             </label>
             <textarea
@@ -544,21 +544,21 @@ Check the browser console for more details.`);
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this deck covers..."
               rows={3}
-              className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder:text-gray-400"
+              className="w-full px-4 py-2.5 text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Public/Private Toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Visibility</label>
             <div className="flex items-center gap-4">
               <button
                 type="button"
                 onClick={() => setIsPublic(false)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
                   !isPublic
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                    : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -569,8 +569,8 @@ Check the browser console for more details.`);
                 onClick={() => setIsPublic(true)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
                   isPublic
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                    : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-500'
                 }`}
               >
                 <Globe className="w-4 h-4" />
@@ -581,9 +581,9 @@ Check the browser console for more details.`);
         </div>
 
         {/* Cards Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Cards ({cards.filter(c => !c._deleted).length})
             </h2>
             <div className="flex items-center gap-3">
@@ -612,16 +612,16 @@ Check the browser console for more details.`);
             {cards.filter(c => !c._deleted).map((card, index) => (
               <div
                 key={card.id || `new-${index}`}
-                className="flex gap-3 items-start p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+                className="flex gap-3 items-start p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-colors"
               >
                 {/* Card Number */}
-                <div className="flex-shrink-0 w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm font-semibold text-slate-700 mt-2">
+                <div className="flex-shrink-0 w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-sm font-semibold text-slate-700 dark:text-slate-300 mt-2">
                   {index + 1}
                 </div>
 
                 {/* Front Input */}
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Front</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Front</label>
                   <input
                     ref={(el) => {
                       if (!cardRefs.current[index]) cardRefs.current[index] = { front: null, back: null };
@@ -631,13 +631,13 @@ Check the browser console for more details.`);
                     value={card.front}
                     onChange={(e) => handleCardChange(index, 'front', e.target.value)}
                     placeholder="Question or term"
-                    className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400"
+                    className="w-full px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 
                 {/* Back Input */}
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Back</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Back</label>
                   <input
                     ref={(el) => {
                       if (!cardRefs.current[index]) cardRefs.current[index] = { front: null, back: null };
@@ -648,14 +648,14 @@ Check the browser console for more details.`);
                     onChange={(e) => handleCardChange(index, 'back', e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, 'back', e)}
                     placeholder="Answer or definition"
-                    className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400"
+                    className="w-full px-3 py-2 text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 
                 {/* Delete Button */}
                 <button
                   onClick={() => handleDeleteCard(index)}
-                  className="flex-shrink-0 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-6"
+                  className="flex-shrink-0 p-2 text-slate-400 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors mt-6"
                   title="Delete card"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -667,15 +667,15 @@ Check the browser console for more details.`);
           {/* Add Card Button (Bottom) */}
           <button
             onClick={handleAddCard}
-            className="mt-4 w-full py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium flex items-center justify-center gap-2"
+            className="mt-4 w-full py-3 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all font-medium flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Add Card (or press Enter on last card)
           </button>
 
           {/* Keyboard Hint */}
-          <p className="mt-4 text-xs text-slate-500 text-center">
-            💡 Tip: Press <kbd className="px-2 py-1 bg-slate-200 rounded text-xs font-mono">Enter</kbd> in the last card's Back field to quickly add a new card
+          <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
+            💡 Tip: Press <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-xs font-mono">Enter</kbd> in the last card's Back field to quickly add a new card
           </p>
         </div>
 

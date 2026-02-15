@@ -4,6 +4,7 @@ import { Brain, ChevronRight, Sparkles, Layers, Keyboard, ArrowRight } from 'luc
 import Link from 'next/link';
 import AuthButton from '@/components/AuthButton';
 import VokabLogo from '@/components/VokabLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
             >
               My Decks
             </Link>
+            <ThemeToggle />
             <AuthButton />
           </div>
         </div>

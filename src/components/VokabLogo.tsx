@@ -1,3 +1,7 @@
+'use client';
+
+import { useTheme } from './ThemeProvider';
+
 interface VokabLogoProps {
   /** 'dark' for light backgrounds, 'light' for dark backgrounds */
   variant?: 'dark' | 'light';
@@ -15,7 +19,9 @@ export default function VokabLogo({
   size = 28,
   className = '',
 }: VokabLogoProps) {
-  const isDark = variant === 'dark';
+  const { theme } = useTheme();
+  // In dark mode, always use light variant (white logo on dark bg)
+  const isDark = theme === 'dark' ? false : variant === 'dark';
 
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
