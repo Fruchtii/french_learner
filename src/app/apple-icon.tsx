@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
-
 export const size = {
   width: 180,
   height: 180,
@@ -56,18 +54,11 @@ export default function AppleIcon() {
               rx="4"
               fill="#f8fafc"
             />
-            {/* V letter */}
-            <text
-              x="20"
-              y="22"
-              fontFamily="Arial, sans-serif"
-              fontSize="18"
-              fontWeight="700"
+            {/* V letter (path, since ImageResponse can't render <text>) */}
+            <path
+              d="M14.1 9.1H17.2L20 18.4L22.8 9.1H25.9L21.5 22H18.5Z"
               fill="#1a202c"
-              textAnchor="middle"
-            >
-              V
-            </text>
+            />
           </g>
         </svg>
       </div>
