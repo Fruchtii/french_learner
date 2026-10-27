@@ -17,7 +17,7 @@ A Next.js flashcard application for learning French with spaced repetition, mult
 - **Flip Direction**: Reverse learning direction for vocabulary decks (e.g., German → French instead of French → German)
 
 ### Technical Stack
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js 16 with App Router
 - **UI**: React + TypeScript + Tailwind CSS
 - **Database**: Supabase (PostgreSQL)
 - **State Management**: Zustand
@@ -26,7 +26,7 @@ A Next.js flashcard application for learning French with spaced repetition, mult
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20.9+ (required by Next.js 16)
 - npm/yarn/pnpm/bun
 - Supabase account (for database and auth)
 
